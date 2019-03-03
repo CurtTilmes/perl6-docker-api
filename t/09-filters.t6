@@ -1,0 +1,16 @@
+use Test;
+use Docker::API;
+use JSON::Fast;
+
+plan 4;
+
+is filters(%(foo => 'bar')), '{"foo": "bar"}', 'simple';
+
+is filters(:boolean), '{"boolean": {"true": true}}', 'boolean';
+
+is filters(label => 'this'), '{"label": {"this": true}}', 'label';
+
+is-deeply from-json(filters(label => <this that>)),
+          {label => { :this, :that }}, 'list';
+
+done-testing;

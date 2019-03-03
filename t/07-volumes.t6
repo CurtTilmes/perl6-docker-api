@@ -1,0 +1,34 @@
+use Test;
+use Test::When <author>;
+use Docker::API;
+
+plan 12;
+
+isa-ok my $docker = Docker::API.new(), Docker::API;
+
+ok my $vols = $docker.volumes(label => 'perltesting'), 'List volumes';
+
+is-deeply $vols<Volumes>, [], 'No perltesting volumes';
+
+ok my $newvol = $docker.volume-create(Name => 'perltesting',
+                                      Labels => %( perltesting => '1' )),
+    'Volume create';
+
+is $newvol<Name>, 'perltesting', 'Name';
+is $newvol<Labels><perltesting>, 1, 'Label correct';
+
+my $inspect = $docker.volume-inspect(name => 'perltesting');
+
+is-deeply $newvol, $inspect, 'Inspect matches';
+
+ok $vols = $docker.volumes(label => 'perltesting'), 'List volumes';
+
+is-deeply $vols<Volumes>[0], $newvol, 'List volumes by label';
+
+ok $docker.volume-remove(name => 'perltesting'), 'Remove volume';
+
+ok $vols = $docker.volumes(label => 'perltesting'), 'List volumes';
+
+is-deeply $vols<Volumes>, [], 'No perltesting volumes';
+
+done-testing;

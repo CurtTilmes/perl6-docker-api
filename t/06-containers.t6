@@ -1,0 +1,47 @@
+use Test;
+use Test::When <author>;
+use Docker::API;
+
+plan 18;
+
+isa-ok my $docker = Docker::API.new, Docker::API;
+
+isa-ok $docker.containers, Array, 'containers';
+
+ok my $created = $docker.container-create(name => 'perltesting',
+                                          Image => 'alpine',
+                                          Cmd => ( 'echo', 'perl testing' )),
+    'create';
+
+my $id = $created<Id>;
+
+ok my $cont = $docker.container-inspect(:$id), 'inspect';
+
+is $cont<Name>, '/perltesting', 'right container name';
+
+is $cont<State><Status>, 'created', 'container in created state';
+
+ok $docker.container-start(:$id), 'start container';
+
+ok $docker.container-wait(:$id), 'wait for container to stop running';
+
+ok $cont = $docker.container-inspect(:$id), 'inspect';
+
+is $cont<State><Running>, False, 'not running';
+is $cont<State><Status>, 'exited', 'exited';
+is $cont<State><ExitCode>, 0, 'exit code 0';
+
+ok my $log = $docker.container-logs(:$id, :stdout), 'get stdout';
+
+like $log, /'perl testing'/, 'log correct';
+
+ok $docker.container-rename(:$id, name => 'renamedperltesting'), 'rename';
+
+ok $cont = $docker.container-inspect(:$id), 'inspect again';
+
+is $cont<Name>, '/renamedperltesting', 'rename worked';
+
+ok $docker.container-remove(:$id), 'remove container';
+
+
+done-testing;
