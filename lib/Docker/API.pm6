@@ -2,7 +2,7 @@ use LibCurl::REST;
 use URI::Template;
 use JSON::Fast;
 
-sub filters(%filters is copy = %(), *%vars) is export
+sub filters(%filters is copy = %(), *%vars)
 {
     for %vars.kv -> $k, $v
     {
@@ -12,7 +12,7 @@ sub filters(%filters is copy = %(), *%vars) is export
             default { %filters{$k}{$_} = True }
         }
     }
-    %filters ?? to-json(%filters, :!pretty) !! Nil
+    filters => (%filters ?? to-json(%filters, :!pretty) !! Nil)
 }
 
 sub expand($template, |args)
@@ -54,7 +54,7 @@ class Docker::API
     {
         $.get(expand('containers/json{?all,limit,size,filters}',
                      :$all, :$limit, :$size,
-                     filters => filters(%filters, |filters)))
+                     |filters(%filters, |filters)))
     }
 
     method container-inspect(Str:D :$id!, Bool :$size)
@@ -150,7 +150,7 @@ class Docker::API
     method containers-prune(:%filters, |filters)
     {
         $.post(expand('containers/prune{?filters}',
-                      filters => filters(%filters, |filters)))
+                      |filters(%filters, |filters)))
     }
 
     method container-create(Str :$name, *%fields)
@@ -161,7 +161,7 @@ class Docker::API
     method images(Bool :$all, Bool :$digests, :%filters, |filters)
     {
         $.get(expand('images/json{?all,filters,digests}', :$all, :$digests,
-                     filters => filters(%filters, |filters)))
+                     |filters(%filters, |filters)))
     }
 
     method image-create(Str :$fromImage, Str :$fromSrc, Str :$repo,
@@ -191,13 +191,13 @@ class Docker::API
     {
         $.post(expand('build/prune{?keep-storage,all,filters}',
                       :$keep-storage, :$all,
-                      filters => filters(%filters, |filters)))
+                      |filters(%filters, |filters)))
     }
 
     method images-search(Str:D :$term, Int :$limit, :%filters, |filters)
     {
         $.get(expand('images/search{?term,limit,filters}',
-                     :$term, :$limit, filters => filters(%filters, |filters)))
+                     :$term, :$limit, |filters(%filters, |filters)))
     }
 
     method image-inspect(Str:D :$name!)
@@ -229,7 +229,7 @@ class Docker::API
     method images-prune(:%filters, |filters)
     {
         $.post(expand('images/prune{?filters}',
-                      filters => filters(%filters, |filters)))
+                      |filters(%filters, |filters)))
     }
 
     method image-get(Str:D :$name!, Str :$download)
@@ -250,7 +250,7 @@ class Docker::API
     method volumes(:%filters, |filters)
     {
         $.get(expand('volumes{?filters}',
-                     filters => filters(%filters, |filters)))
+                     |filters(%filters, |filters)))
     }
 
     method volume-create(|desc)
@@ -271,7 +271,7 @@ class Docker::API
     method volumes-prune(:%filters, |filters)
     {
         $.post(expand('volumes/prune{?filters}',
-                      filters => filters(%filters, |filters)))
+                      |filters(%filters, |filters)))
     }
 
     method commit(Str :$container, Str :$repo, Str :$tag, Str :$comment,
@@ -287,7 +287,7 @@ class Docker::API
     method networks(:%filters, |filters)
     {
         $.get(expand('networks{?filters}',
-                     filters => filters(%filters, |filters)))
+                     |filters(%filters, |filters)))
     }
 
     method network-inspect(Str:D :$id!, Bool :$verbose, Str :$scope)
@@ -319,7 +319,7 @@ class Docker::API
     method networks-prune(:%filters, |filters)
     {
         $.post(expand('networks/prune{?filters}',
-                      filters => filters(%filters, |filters)))
+                      |filters(%filters, |filters)))
     }
 
     method exec-create(Str:D :$id!, |desc)
@@ -345,5 +345,10 @@ class Docker::API
     method exec(Str:D :$id!, |desc)
     {
         $.exec-start(id => $.exec-create(:$id, |desc)<Id>)
+    }
+
+    method plugins(:%filters, |filters)
+    {
+        $.get(expand('plugins{?filters}', |filters(%filters, |filters)))
     }
 }

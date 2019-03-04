@@ -169,7 +169,7 @@ Upload a tar file with images.
 
 ### volumes(:%filters, :$name, :$label)
 
-    $docker.volumes(filters => %( label => %( foo => True  ) ) );
+    $docker.volumes(filters => { label => { foo => True } } );
 
     $docker.volumes(label => 'foo');       # has label foo
     $docker.volumes(label => 'foo=bar');   # has label foo = 'bar'
@@ -178,11 +178,11 @@ Upload a tar file with images.
     $docker.volumes(name => 'foo');        # volume with name foo
     $docker.volumes(name => <foo bar>);    # volume with name foo or bar
 
-### volume-create(:$Name, :$Driver, :%DriverOpts, :%Labels)
+### volume-create(...)
 
 Everything is optional, it will make a random volume.
 
-    $docker.volume-create(Name => 'foo', Labels => %( foo => 'bar' ));
+    $docker.volume-create(Name => 'foo', Labels => { foo => 'bar' });
 
 ### volume-inspect(:$name)
 
