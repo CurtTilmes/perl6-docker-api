@@ -34,6 +34,11 @@ class Docker::API
         $!rest = LibCurl::REST.new(:$unix-socket-path, |opts)
     }
 
+    method auth(|creds)
+    {
+        $.post('auth', creds.hash)
+    }
+
     method version()
     {
         $.get('version')

@@ -23,6 +23,13 @@ API](https://docs.docker.com/engine/api/latest).
 
 ## Methods
 
+### auth(...)
+
+    $docker.auth(username => 'ctilmes',
+                 password => %*ENV<DOCKER_PW>,
+                 email => 'curt@tilmes.org',
+                 serveraddress => "https://index.docker.io/v1/"));
+
 ### version
 
 ### info
@@ -235,6 +242,8 @@ lots of other options
 ### exec(Str:D :$id!, ...)
 
 call `exec-create(:$id, ...)`, then `exec-start()`
+
+### plugins(%filters, ...)
 
 ## Connection Information
 
