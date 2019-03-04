@@ -1,0 +1,11 @@
+use Test;
+use Test::When <author>;
+use Docker::API;
+
+my $docker = Docker::API.new();
+
+#plan 5;
+
+#say $docker.exec(id => '0c6453372a27', Cmd => ['ls'], :AttachStdout);
+
+done-testing;

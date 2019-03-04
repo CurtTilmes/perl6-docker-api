@@ -1,4 +1,4 @@
-use LibCurl::Easy;
+use LibCurl::REST;
 use URI::Template;
 use JSON::Fast;
 
@@ -15,89 +15,56 @@ sub filters(%filters is copy = %(), *%vars) is export
     %filters ?? to-json(%filters, :!pretty) !! Nil
 }
 
+sub expand($template, |args)
+{
+    state %template-cache;
+
+    my $uri = %template-cache{$template} //
+             (%template-cache{$template} = URI::Template.new(:$template));
+
+    $uri.process(|args)
+}
+
 class Docker::API
 {
-    has $.verbose;
-    has $.socket;
-    has $.prefix;
-    has $.curl;        # Use a separate curl handle set up for GET/POST/DELETE
-    has $.curl-post;
-    has $.curl-delete;
+    has $.rest handles<query get post delete>;
 
-    submethod BUILD(:$!socket = '/var/run/docker.sock', :$!verbose,
-        :$!prefix = 'http://localhost')
+    submethod BUILD(:$unix-socket-path = '/var/run/docker.sock', |opts)
     {
-        $!curl = LibCurl::Easy.new(unix-socket-path => $!socket, :$!verbose);
-
-        die "Bad server"
-            unless $!curl.URL("$!prefix/_ping").perform.content eq 'OK';
-
-        $!curl-post = LibCurl::Easy.new(unix-socket-path => $!socket,
-                                        Content-Type => 'application/json',
-                                        :$!verbose, customrequest => 'POST');
-
-        $!curl-delete = LibCurl::Easy.new(unix-socket-path => $!socket,
-                                        :$!verbose, customrequest => 'DELETE');
+        $!rest = LibCurl::REST.new(:$unix-socket-path, |opts)
     }
 
-    method get(Str:D $url)
+    method version()
     {
-        my $res = from-json($!curl.URL("$!prefix/$url").perform.content);
-
-        $!curl.success ?? $res !! fail $res<message>;
+        $.get('version')
     }
 
-    method get-str(Str:D $url)
+    method info()
     {
-        my $res = $!curl.URL("$!prefix/$url").perform.content;
-
-        $!curl.success ?? $res !! fail from-json($res)<message>;
+        $.get('info')
     }
 
-    method post(Str:D $url, $body = '')
+    method df()
     {
-        my $res = $!curl-post.URL("$!prefix/$url")
-                            .send(to-json($body), :!pretty).perform.content;
-
-        $res = from-json($res) if $res;
-
-        $!curl-post.success ?? ($res || True) !! fail $res<message>
+        $.get('system/df')
     }
-
-    method delete(Str:D $url)
-    {
-        $!curl-delete.URL("$!prefix/$url").perform.success
-            ?? True
-            !! fail from-json($!curl-delete.content)<message>
-    }
-
-    method version() { $.get('version') }
-
-    method info() { $.get('info') }
-
-    method df() { $.get('system/df') }
 
     method containers(Bool :$all, Int :$limit, Bool :$size,
-                      :%filters, |args)
+                      :%filters, |filters)
     {
-        state $uri = URI::Template.new(
-            template => 'containers/json{?all,limit,size,filters}');
-        $.get($uri.process(:$all, :$limit, :$size,
-                           filters => filters(%filters, |args)))
+        $.get(expand('containers/json{?all,limit,size,filters}',
+                     :$all, :$limit, :$size,
+                     filters => filters(%filters, |filters)))
     }
 
-    method container-inspect(Str:D :$id, Bool :$size)
+    method container-inspect(Str:D :$id!, Bool :$size)
     {
-        state $uri = URI::Template.new(
-            template => 'containers/{id}/json{?size}');
-        $.get($uri.process(:$id, :$size))
+        $.get(expand('containers/{id}/json{?size}', :$id, :$size))
     }
 
     method container-top(Str:D :$id!, Str :$ps_args)
     {
-        state $uri = URI::Template.new(
-            template => 'containers/{id}/top{?ps_args}');
-        $.get($uri.process(:$id, :$ps_args))
+        $.get(expand('containers/{id}/top{?ps_args}'), $id, :$ps_args)
     }
 
     method container-changes(Str:D :$id!)
@@ -108,10 +75,8 @@ class Docker::API
     method container-stats(Str:D :$id!)
     {
         my Bool $stream = False; # no stream yet
-        state $uri = URI::Template.new(
-            template => 'containers/{id}/stats{?stream}');
 
-        $.get($uri.process(:$id, :$stream))
+        $.get(expand('containers/{id}/stats{?stream}', :$id, :$stream))
     }
 
     method container-logs(Str:D :$id!,
@@ -123,34 +88,26 @@ class Docker::API
                           Str :$tail)
     {
         my Bool $follow = False;  # no streaming yet!
-        state $uri = URI::Template.new(template => 'containers/{id}/logs'
-            ~'{?follow,stdout,stderr,since,until,timestamps,tail}');
-
-        $.get-str($uri.process(:$id, :$follow, :$stdout, :$stderr,
-                               :$since, :$until, :$timestamps, :$tail))
+        $.get(expand('containers/{id}/logs'
+                     ~ '{?follow,stdout,stderr,since,until,timestamps,tail}',
+                     :$id, :$follow, :$stdout, :$stderr,
+                     :$since, :$until, :$timestamps, :$tail))
     }
 
     method container-start(Str:D :$id!, Str :$detachKeys)
     {
-        state $uri = URI::Template.new(
-            template => 'containers/{id}/start{?detachKeys}');
-
-        $.post($uri.process(:$id, :$detachKeys))
+        $.post(expand('containers/{id}/start{?detachKeys}',
+                      :$id, :$detachKeys))
     }
 
     method container-stop(Str:D :$id!, Int :$t)
     {
-        state $uri = URI::Template.new(template => 'containers/{id}/stop{?t}');
-
-        $.post($uri.process(:$id, :$t))
+        $.post(expand('containers/{id}/stop{?t}', :$id, :$t))
     }
 
     method container-restart(Str:D :$id!, Int :$t)
     {
-        state $uri = URI::Template.new(
-            template => 'containers/{id}/restart{?t}');
-
-        $.post($uri.process(:$id, :$t))
+        $.post(expand('containers/{id}/restart{?t}', :$id, :$t))
     }
 
     method container-update(Str:D :$id!, *%fields)
@@ -160,18 +117,13 @@ class Docker::API
 
     method container-kill(Str:D :$id!, Cool :$signal)
     {
-        state $uri = URI::Template.new(
-            template => 'containers/{id}/kill{?signal}');
-
-        $.post($uri.process(:$id, :$signal))
+        $.post(expand('containers/{id}/kill{?signal}',
+                      :$id, :$signal))
     }
 
     method container-rename(Str:D :$id!, Str:D :$name!)
     {
-        state $uri = URI::Template.new(
-            template => 'containers/{id}/rename{?name}');
-
-        $.post($uri.process(:$id, :$name))
+        $.post(expand('containers/{id}/rename{?name}', :$id, :$name))
     }
 
     method container-pause(Str:D :$id!)
@@ -186,50 +138,66 @@ class Docker::API
 
     method container-wait(Str:D :$id!, Str :$condition)
     {
-        state $uri = URI::Template.new(
-            template => 'containers/{id}/wait{?condition}');
-
-        $.post($uri.process(:$id, :$condition))
+        $.post(expand('containers/{id}/wait{?condition}', :$id, :$condition))
     }
 
     method container-remove(Str:D :$id!, Bool :$v, Bool :$force, Bool :$link)
     {
-        state $uri = URI::Template.new(
-            template => 'containers/{id}{?v,force,link}');
-
-        $.delete($uri.process(:$id, :$v, :$force, :$link))
+        $.delete(expand('containers/{id}{?v,force,link}',
+                        :$id, :$v, :$force, :$link))
     }
 
-    method containers-prune(:%filters, |args)
+    method containers-prune(:%filters, |filters)
     {
-        state $uri = URI::Template.new(
-            template => 'containers/prune{?filters}');
-
-        $.post($uri.process(filters => filters(%filters, |args)))
+        $.post(expand('containers/prune{?filters}',
+                      filters => filters(%filters, |filters)))
     }
 
     method container-create(Str :$name, *%fields)
     {
-        state $uri = URI::Template.new(template => 'containers/create{?name}');
-
-        $.post($uri.process(:$name), %fields)
+        $.post(expand('containers/create{?name}', :$name), %fields)
     }
 
-    method images(Bool :$all, Bool :$digests, :%filters, |args)
+    method images(Bool :$all, Bool :$digests, :%filters, |filters)
     {
-        state $uri = URI::Template.new(
-            template => 'images/json{?all,filters,digests}');
-
-        $.get($uri.process(:$all, :$digests,
-                           filters => filters(%filters, |args)))
+        $.get(expand('images/json{?all,filters,digests}', :$all, :$digests,
+                     filters => filters(%filters, |filters)))
     }
 
-    method images-search(Str:D :$term, Int :$limit, :%filters, |args)
+    method image-create(Str :$fromImage, Str :$fromSrc, Str :$repo,
+                        Str :$tag, Str :$platform)
     {
-        state $uri = URI::Template.new(template =>
-                                       'images/search{?term,limit,filters}');
+        $.post(expand('images/create' ~
+                      '{?fromImage,fromSrc,repo,tag,platform}',
+                      :$fromImage, :$fromSrc, :$repo, :$tag, :$platform))
+    }
 
-        $.get($uri.process(:$term, :$limit, filters => filters(%filters, |args)))
+    method image-build(Str :$dockerfile, :@t, Str :$extrahosts,
+                       Str :$remote, Bool :$q, Bool :$nocache,
+                       :@cachefrom, Str :$pull, Bool :$rm, Bool :$forcerm,
+                       Int :$memory, Int :$memswap, Int :$cpushares,
+                       Str :$cpusetcpus, Int :$cpuperiod, Int :$cpuquota,
+                       :%buildargs, Int :$shmsize, Bool :$squash, :%labels,
+                       Str :$networkmode, Str :$platform, Str :$target)
+    {
+        my $cachefrom = to-json(@cachefrom) if @cachefrom;
+        my $buildargs = to-json(%buildargs) if %buildargs;
+        my $labels    = to-json(%labels)    if %labels;
+
+        $.post(expand('build{?dockerfile,t*,extrahosts,remote,q,nocache,cachefrom,pull,rm,forcerm,memory,memswap,cpushares,cpusetcpus,cpuperiod,cpuquota,buildargs,shmsize,squash,labels,networkmode,platform,target}', :$dockerfile, :@t, :$extrahosts, :$remote, :$q, :$nocache, :$cachefrom, :$pull, :$rm, :$forcerm, :$memory, :$memswap, :$cpushares, :$cpusetcpus, :$cpuperiod, :$cpuquota, :$buildargs, :$shmsize, :$squash, :$labels, :$networkmode, :$platform, :$target))
+    }
+
+    method build-prune(Int :$keep-storage, Bool :$all, :%filters, |filters)
+    {
+        $.post(expand('build/prune{?keep-storage,all,filters}',
+                      :$keep-storage, :$all,
+                      filters => filters(%filters, |filters)))
+    }
+
+    method images-search(Str:D :$term, Int :$limit, :%filters, |filters)
+    {
+        $.get(expand('images/search{?term,limit,filters}',
+                     :$term, :$limit, filters => filters(%filters, |filters)))
     }
 
     method image-inspect(Str:D :$name!)
@@ -244,40 +212,50 @@ class Docker::API
 
     method image-tag(Str:D :$name!, Str :$repo, Str :$tag)
     {
-        state $uri = URI::Template.new(
-            template =>'images/{name}/tag{?repo,tag}');
+        $.post(expand('images/{name}/tag{?repo,tag}', :$name, :$repo, :$tag))
+    }
 
-        $.post($uri.process(:$name, :$repo, :$tag))
+    method image-push(Str:D :$name!, Str :$tag)
+    {
+        $.post(expand('images/{name}/push{?tag}', :$name, :$tag))
     }
 
     method image-remove(Str:D :$name!, Bool :$force, Bool :$noprune)
     {
-        state $uri = URI::Template.new(
-            template =>'images/{name}{?force,noprune}');
-
-        $.delete($uri.process(:$name, :$force, :$noprune))
+        $.delete(expand('images/{name}{?force,noprune}',
+                        :$name, :$force, :$noprune))
     }
 
-    method images-prune(:%filters, |args)
+    method images-prune(:%filters, |filters)
     {
-        state $uri = URI::Template.new(template =>'images/prune{?filters}');
-        $.post($uri.process(filters => filters(%filters, |args)))
+        $.post(expand('images/prune{?filters}',
+                      filters => filters(%filters, |filters)))
     }
 
-    method volumes(:%filters, |args)
+    method image-get(Str:D :$name!, Str :$download)
     {
-        state $uri = URI::Template.new(template => 'volumes{?filters}');
-        $.get($uri.process(filters => filters(%filters, |args)))
+        $.get(expand('images/{name}/get', :$name), :$download, :bin)
     }
 
-    method volume-create(Str :$Name, Str :$Driver, :%DriverOpts, :%Labels)
+    method images-get(:@names!, Str :$download)
     {
-        my %vol;
-        %vol<Name> = $Name if $Name;
-        %vol<Driver> = $Driver if $Driver;
-        %vol<DriverOpts> = %DriverOpts if %DriverOpts;
-        %vol<Labels> = %Labels if %Labels;
-        $.post('volumes/create', %vol);
+        $.get(expand('images/get{?names}', :@names), :$download, :bin)
+    }
+
+    method images-load(Bool :$quiet, Str :$upload)
+    {
+        $.post(expand('images/load{?quiet}', :$quiet), :$upload)
+    }
+
+    method volumes(:%filters, |filters)
+    {
+        $.get(expand('volumes{?filters}',
+                     filters => filters(%filters, |filters)))
+    }
+
+    method volume-create(|desc)
+    {
+        $.post('volumes/create', desc.hash);
     }
 
     method volume-inspect(Str:D :$name)
@@ -287,13 +265,85 @@ class Docker::API
 
     method volume-remove(Str:D :$name!, Bool :$force)
     {
-        state $uri = URI::Template.new(template => 'volumes/{name}{?force}');
-        $.delete($uri.process(:$name, :$force))
+        $.delete(expand('volumes/{name}{?force}', :$name, :$force))
     }
 
-    method volumes-prune(:%filters, |args)
+    method volumes-prune(:%filters, |filters)
     {
-        state $uri = URI::Template.new(template => 'volumes/prune{?filters}');
-        $.post($uri.process(filters => filters(%filters, |args)))
+        $.post(expand('volumes/prune{?filters}',
+                      filters => filters(%filters, |filters)))
+    }
+
+    method commit(Str :$container, Str :$repo, Str :$tag, Str :$comment,
+                  Str :$author, Bool :$pause, Str :$changes)
+    {
+        # Still need to upload body variables..
+        ...
+        $.post(expand('/commit{?container,repo,tag,comment,author,pause,changes}',
+                      :$container, :$repo, :$tag, :$comment, :$author, :$pause,
+                      :$changes))
+    }
+
+    method networks(:%filters, |filters)
+    {
+        $.get(expand('networks{?filters}',
+                     filters => filters(%filters, |filters)))
+    }
+
+    method network-inspect(Str:D :$id!, Bool :$verbose, Str :$scope)
+    {
+        $.get(expand('networks/{id}{?verbose,scope}',
+                     :$id, :$verbose, :$scope))
+    }
+
+    method network-remove(Str:D :$id!)
+    {
+        $.delete(expand('networks/{id}', :$id))
+    }
+
+    method network-create(|desc)
+    {
+        $.post('networks/create', desc.hash)
+    }
+
+    method network-connect(Str:D :$id!, |desc)
+    {
+        $.post(expand('networks/{id}/connect', :$id), desc.hash)
+    }
+
+    method network-disconnect(Str:D :$id!, |desc)
+    {
+        $.post(expand('networks/{id}/disconnect', :$id), desc.hash)
+    }
+
+    method networks-prune(:%filters, |filters)
+    {
+        $.post(expand('networks/prune{?filters}',
+                      filters => filters(%filters, |filters)))
+    }
+
+    method exec-create(Str:D :$id!, |desc)
+    {
+        $.post(expand('containers/{id}/exec', :$id), desc.hash)
+    }
+
+    method exec-start(Str:D :$id!, |desc)
+    {
+        $.post(expand('exec/{id}/start', :$id), desc.hash)
+    }
+
+    method exec-resize(Str:D :$id!, Int :$h, Int :$w)
+    {
+        $.post(expand('exec/{id}/resize{?h,w}', :$id, :$h, :$w))
+    }
+
+    method exec-inspect(Str:D :$id!)
+    {
+        $.get(expand('exec/{id}/json', :$id))
+    }
+
+    method exec(Str:D :$id!, |desc)
+    {
+        $.exec-start(id => $.exec-create(:$id, |desc)<Id>)
     }
 }

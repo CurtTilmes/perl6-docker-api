@@ -1,0 +1,22 @@
+use Test;
+use Test::When <author>;
+use Docker::API;
+
+my $docker = Docker::API.new();
+
+plan 5;
+
+ok my $networks = $docker.networks, 'networks';
+
+ok my $network = $docker.network-create(Name => 'perltesting'),
+    'network create';
+
+my $id = $network<Id>;
+
+ok $network = $docker.network-inspect(:$id), 'network inspect';
+
+is $network<Name>, 'perltesting', 'network name correct';
+
+ok $docker.network-remove(:$id), 'network remove';
+
+done-testing;

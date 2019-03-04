@@ -12,6 +12,8 @@ ok my $list = $docker.images(:all), 'all images';
 ok $docker.images-search(term => 'alpine', limit => 10,
                          :is-official, :!is-automated), 'search';
 
+ok $docker.image-create(fromImage => 'alpine', tag => 'latest'), 'image pull';
+
 ok $docker.image-inspect(name => 'alpine'), 'inspect';
 
 ok $docker.image-history(name => 'alpine:latest'), 'history';

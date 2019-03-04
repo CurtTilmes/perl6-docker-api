@@ -11,7 +11,7 @@ ok my $vols = $docker.volumes(label => 'perltesting'), 'List volumes';
 is-deeply $vols<Volumes>, [], 'No perltesting volumes';
 
 ok my $newvol = $docker.volume-create(Name => 'perltesting',
-                                      Labels => %( perltesting => '1' )),
+                                      Labels => { perltesting => '1' }),
     'Volume create';
 
 is $newvol<Name>, 'perltesting', 'Name';

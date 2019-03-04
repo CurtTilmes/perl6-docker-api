@@ -17,17 +17,10 @@ API](https://docs.docker.com/engine/api/latest).
 
     say $docker.images;
 
-    say $docker.images(:all);
-
     say $docker.containers;
-
-    say $docker.containers(:all);
 
     say $docker.container-inspect(id => 'ec4e127cbebf);
 
-    say $docker.container-top(id => 'ec4e127cbebf');
-
-    say $docker.container-changes(id => 'ec4e127cbebf');
 
 ## version
 
@@ -104,11 +97,39 @@ default `SIGKILL`
                                     %( 'alpine*:*' => True )));
     .<RepoTags>.say for @$list;
 
+## image-create(Str :$fromImage, Str :$fromStr, Str :$repo, Str :$tag,
+                Str :$platform)
+
+    $docker.image-create(fromImage => 'alpine', tag => 'latest');
+
+## image-build(Str :$dockerfile, :@t, Str :$extrahosts,
+                       Str :$remote, Bool :$q, Bool :$nocache,
+                       :@cachefrom, Str :$pull, Bool :$rm, Bool :$forcerm,
+                       Int :$memory, Int :$memswap, Int :$cpushares,
+                       Str :$cpusetcpus, Int :$cpuperiod, Int :$cpuquota,
+                       :%buildargs, Int :$shmsize, Bool :$squash, :%labels,
+                       Str :$networkmode, Str :$platform, Str :$target)
+
+
+    $docker.image-build(:q, :rm, t => ['docker-perl-testing:test-version'],
+        remote => 'https://github.com/CurtTilmes/docker-test.git')
+
+`:q` = quiet
+
+`:rm` = Remove intermediate containers after a successful build
+
+`:remote` = A URL, can be for a git repository, or a single file that
+is a Dockerfile, or a single file that is a tarball with a Dockerfile
+in it.  If you rename the dockerfile, pass in `:dockerfile` to tell it
+which file is the Dockerfile.
+
 ## image-inspect(Str:D :$name!)
 
 ## image-history(Str:D :$name!)
 
 ## image-tag(Str:D :$name!, Str :$repo, Str :$tag)
+
+## image-push(Str:D :$name!, Str :$tag)
 
 ## image-remove(Str:D :$name!, Bool :$force, Bool :$noprune)
 
@@ -127,6 +148,23 @@ default `SIGKILL`
 
 ## images-prune(:%filters, :$dangling :$until :$label)
 
+## image-get(Str:D :$name!, Str :$download)
+
+Returns Blob of a tar file
+
+You can pass in a filename in `:download` and it will dump the tar
+file into that file.
+
+## images-get(:@names, Str :$download))
+
+Returns Blob of a tar file
+
+You can pass in a filename in `:download` and it will dump the tar
+file into that file.
+
+## images-load(Bool :$quiet, Str :$upload)
+
+Upload a tar file with images.
 
 ## volumes(:%filters, :$name, :$label)
 
@@ -155,6 +193,47 @@ Everything is optional, it will make a random volume.
 
 ## volume-prune(:%filters)
 
+## networks(:%filters, ...)
+
+## network-inspect(Str:D :$id!, Bool :$verbose, Str :$scope)
+
+## network-create(...)
+
+    $docker.network-create(Name => 'foo');
+
+lots of other options
+
+## network-connect(Str:D :$id!, ...)
+
+`:Container` id or name
+
+`:EndpointConfig` lots of options
+
+## network-disconnect(Str:D :$id!, ...)
+
+`:Container`
+
+`:Force`
+
+## networks-prune(:%filters, ...)
+
+## exec-create(Str:D :$id!, ...)
+
+`:id` of container
+
+## exec-start(Str:D :$id!, ...)
+
+`:id` of exec
+
+## exec-resize(Str:D :$id!, Int :$h, Int :$w)
+
+## exec-inspect(Str:D :$id!)
+
+`:id` of exec
+
+## exec(Str:D :$id!, ...)
+
+call `exec-create(:$id, ...)`, then `exec-start()`
 
 ## Connection Information
 
@@ -165,11 +244,6 @@ by default) If you use a different socket, pass it in with the
     use Docker;
 
     my $docker = Docker.new(socket => '/my/special/place/docker.sock');
-
-Adding support for docker on a TCP socket should be easy, but isn't
-done yet (patches welcome!).  Though I understand that some
-configurations require it, it seems that most people (including me)
-just use a unix domain socket, so I'm not sure that is really needed.
 
 ## INSTALL
 
