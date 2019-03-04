@@ -1,0 +1,11 @@
+use Test;
+use Test::When <author>;
+use Docker::API;
+
+plan 1;
+
+my $docker = Docker::API.new;
+
+ok $docker.plugins, 'plugins';
+
+done-testing;
