@@ -6,7 +6,7 @@ plan 18;
 
 isa-ok my $docker = Docker::API.new, Docker::API;
 
-isa-ok $docker.containers, Array, 'containers';
+ok $docker.containers, 'containers';
 
 ok my $created = $docker.container-create(name => 'perltesting',
                                           Image => 'alpine',
