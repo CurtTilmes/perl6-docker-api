@@ -21,14 +21,15 @@ API](https://docs.docker.com/engine/api/latest).
 
     say $docker.container-inspect(id => 'ec4e127cbebf);
 
+## Methods
 
-## version
+### version
 
-## info
+### info
 
-## df
+### df
 
-## containers(Bool :$all, Int :$limit, Bool :$size, :%filters, |args)
+### containers(Bool :$all, Int :$limit, Bool :$size, :%filters, |args)
 
 `:$all`
 `:$limit`
@@ -37,50 +38,50 @@ API](https://docs.docker.com/engine/api/latest).
 
 bunch of other filter args
 
-## container-inspect(Str:D :$id!)
+### container-inspect(Str:D :$id!)
 
-## container-top(Str:D :$id!)
+### container-top(Str:D :$id!)
 
-## container-changes(Str:D :$id!)
+### container-changes(Str:D :$id!)
 
-## container-stats(Str:D :$id)
-
-no streaming yet
-
-## container-logs(Str:D :$id!, Bool :$stdout, Bool :$stderr, Int :$since, Int :$until, Bool :$timestamps, Str :$tail)
+### container-stats(Str:D :$id)
 
 no streaming yet
 
-## container-start(Str:D :$id!, Str :$detachKeys)
+### container-logs(Str:D :$id!, Bool :$stdout, Bool :$stderr, Int :$since, Int :$until, Bool :$timestamps, Str :$tail)
 
-## container-stop(Str:D :$id!, Int :$t)
+no streaming yet
+
+### container-start(Str:D :$id!, Str :$detachKeys)
+
+### container-stop(Str:D :$id!, Int :$t)
 
 `:t` = Number of seconds to wait before killing the container
 
-## container-restart(Str:D :$id!, Int :$t)
+### container-restart(Str:D :$id!, Int :$t)
 
 `:t` = Number of seconds to wait before restarting the container
 
-## container-kill(Str:D :$id!, Cool :$signal)
+### container-kill(Str:D :$id!, Cool :$signal)
 
 :signal can be a POSIX signal integer or string (e.g. `SIGINT`)
 default `SIGKILL`
 
-## container-rename(Str:D :$id!, Str:D :$name!)
+### container-rename(Str:D :$id!, Str:D :$name!)
 
-## container-pause(Str:D :$id!)
+### container-pause(Str:D :$id!)
 
-## container-unpause(Str:D :$id!)
+### container-unpause(Str:D :$id!)
 
-## container-wait(Str:D :$id!, Str :$condition)
+### container-wait(Str:D :$id!, Str :$condition)
 
 `:condition` = `not-running` (default), `next-exit`, `removed`
 
-## container-remove(Str:D :$id!, Bool :$v, Bool :$force, Bool :$link)
+### container-remove(Str:D :$id!, Bool :$v, Bool :$force, Bool :$link)
 
-## containers-prune(:%filters)
+### containers-prune(:%filters)
 
-## container-create(Str :$name, *%fields)
+### container-create(Str :$name, *%fields)
 
      my $container = $docker.container-create(
                           Image => 'alpine',
@@ -88,21 +89,21 @@ default `SIGKILL`
 
      put $container<Id>;
 
-## container-update(Str:D :$id!, *%fields)
+### container-update(Str:D :$id!, *%fields)
 
-## images(:%filters, Bool :$all, Bool :$digests)
+### images(:%filters, Bool :$all, Bool :$digests)
 
     my $list = $docker.images(filters =>
                                 %( reference =>
                                     %( 'alpine*:*' => True )));
     .<RepoTags>.say for @$list;
 
-## image-create(Str :$fromImage, Str :$fromStr, Str :$repo, Str :$tag,
+### image-create(Str :$fromImage, Str :$fromStr, Str :$repo, Str :$tag,
                 Str :$platform)
 
     $docker.image-create(fromImage => 'alpine', tag => 'latest');
 
-## image-build(Str :$dockerfile, :@t, Str :$extrahosts,
+### image-build(Str :$dockerfile, :@t, Str :$extrahosts,
                        Str :$remote, Bool :$q, Bool :$nocache,
                        :@cachefrom, Str :$pull, Bool :$rm, Bool :$forcerm,
                        Int :$memory, Int :$memswap, Int :$cpushares,
@@ -123,17 +124,17 @@ is a Dockerfile, or a single file that is a tarball with a Dockerfile
 in it.  If you rename the dockerfile, pass in `:dockerfile` to tell it
 which file is the Dockerfile.
 
-## image-inspect(Str:D :$name!)
+### image-inspect(Str:D :$name!)
 
-## image-history(Str:D :$name!)
+### image-history(Str:D :$name!)
 
-## image-tag(Str:D :$name!, Str :$repo, Str :$tag)
+### image-tag(Str:D :$name!, Str :$repo, Str :$tag)
 
-## image-push(Str:D :$name!, Str :$tag)
+### image-push(Str:D :$name!, Str :$tag)
 
-## image-remove(Str:D :$name!, Bool :$force, Bool :$noprune)
+### image-remove(Str:D :$name!, Bool :$force, Bool :$noprune)
 
-## images-search(Str:D :$term, Int :$limit, :%filters,
+### images-search(Str:D :$term, Int :$limit, :%filters,
                  Bool :$is-official, Bool :$is-automated, Int :$stars)
 
     my $list = $docker.images-search(term => 'alpine',
@@ -146,27 +147,27 @@ which file is the Dockerfile.
         say .<description>;
     }
 
-## images-prune(:%filters, :$dangling :$until :$label)
+### images-prune(:%filters, :$dangling :$until :$label)
 
-## image-get(Str:D :$name!, Str :$download)
-
-Returns Blob of a tar file
-
-You can pass in a filename in `:download` and it will dump the tar
-file into that file.
-
-## images-get(:@names, Str :$download))
+### image-get(Str:D :$name!, Str :$download)
 
 Returns Blob of a tar file
 
 You can pass in a filename in `:download` and it will dump the tar
 file into that file.
 
-## images-load(Bool :$quiet, Str :$upload)
+### images-get(:@names, Str :$download))
+
+Returns Blob of a tar file
+
+You can pass in a filename in `:download` and it will dump the tar
+file into that file.
+
+### images-load(Bool :$quiet, Str :$upload)
 
 Upload a tar file with images.
 
-## volumes(:%filters, :$name, :$label)
+### volumes(:%filters, :$name, :$label)
 
     $docker.volumes(filters => %( label => %( foo => True  ) ) );
 
@@ -177,61 +178,61 @@ Upload a tar file with images.
     $docker.volumes(name => 'foo');        # volume with name foo
     $docker.volumes(name => <foo bar>);    # volume with name foo or bar
 
-## volume-create(:$Name, :$Driver, :%DriverOpts, :%Labels)
+### volume-create(:$Name, :$Driver, :%DriverOpts, :%Labels)
 
 Everything is optional, it will make a random volume.
 
     $docker.volume-create(Name => 'foo', Labels => %( foo => 'bar' ));
 
-## volume-inspect(:$name)
+### volume-inspect(:$name)
 
-## volume-remove(:$name, :force)
+### volume-remove(:$name, :force)
 
 `:name` required
 
 `:force` boolean
 
-## volume-prune(:%filters)
+### volume-prune(:%filters)
 
-## networks(:%filters, ...)
+### networks(:%filters, ...)
 
-## network-inspect(Str:D :$id!, Bool :$verbose, Str :$scope)
+### network-inspect(Str:D :$id!, Bool :$verbose, Str :$scope)
 
-## network-create(...)
+### network-create(...)
 
     $docker.network-create(Name => 'foo');
 
 lots of other options
 
-## network-connect(Str:D :$id!, ...)
+### network-connect(Str:D :$id!, ...)
 
 `:Container` id or name
 
 `:EndpointConfig` lots of options
 
-## network-disconnect(Str:D :$id!, ...)
+### network-disconnect(Str:D :$id!, ...)
 
 `:Container`
 
 `:Force`
 
-## networks-prune(:%filters, ...)
+### networks-prune(:%filters, ...)
 
-## exec-create(Str:D :$id!, ...)
+### exec-create(Str:D :$id!, ...)
 
 `:id` of container
 
-## exec-start(Str:D :$id!, ...)
+### exec-start(Str:D :$id!, ...)
 
 `:id` of exec
 
-## exec-resize(Str:D :$id!, Int :$h, Int :$w)
+### exec-resize(Str:D :$id!, Int :$h, Int :$w)
 
-## exec-inspect(Str:D :$id!)
+### exec-inspect(Str:D :$id!)
 
 `:id` of exec
 
-## exec(Str:D :$id!, ...)
+### exec(Str:D :$id!, ...)
 
 call `exec-create(:$id, ...)`, then `exec-start()`
 
