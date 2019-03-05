@@ -25,10 +25,10 @@ API](https://docs.docker.com/engine/api/latest).
 
 ### auth(...)
 
-    $docker.auth(username => 'ctilmes',
-                 password => %*ENV<DOCKER_PW>,
-                 email => 'curt@tilmes.org',
-                 serveraddress => "https://index.docker.io/v1/"));
+    $docker.auth(username => 'me',
+                 password => %*ENV<DOCKERHUB_PW>,
+                 email => 'me@example.com',
+                 serveraddress => 'https://index.docker.io/v1/');
 
 ### version
 

@@ -3,6 +3,9 @@ use Test::When <author>;
 use Docker::API;
 use LibYAML:auth<github:CurtTilmes>;
 
-isa-ok my $docker = Docker::API.new(), Docker::API;
+my $docker = Docker::API.new();
+
+print $docker.container-logs(id => 'bde083ce1d70', :stdout).stdout.decode;
+
 
 done-testing;
