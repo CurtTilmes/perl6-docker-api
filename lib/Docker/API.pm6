@@ -1,3 +1,4 @@
+use Docker::Stream;
 use LibCurl::REST;
 use URI::Template;
 use JSON::Fast;
@@ -25,44 +26,28 @@ sub expand($template, |args)
     $uri.process(|args)
 }
 
-class Docker::Mux
-{
-    has $.buf is required;
-    has $.stdin = buf8.new;
-    has $.stdout = buf8.new;
-    has $.stderr = buf8.new;
-
-    submethod TWEAK()
-    {
-        return unless $!buf ~~ Blob;
-        my $pos = 0;
-        while $pos < $!buf.elems
-        {
-            my $size = $!buf[$pos+4] +< 24
-                    +| $!buf[$pos+5] +< 16
-                    +| $!buf[$pos+6] +< 8
-                    +| $!buf[$pos+7];
-
-            my $next = $!buf.subbuf($pos+8..^$pos+8+$size);
-
-            given $!buf[$pos]
-            {
-                when 0 { $!stdin  ~= $next }
-                when 1 { $!stdout ~= $next }
-                when 2 { $!stderr ~= $next }
-            }
-            $pos += 8 + $size;
-        }
-    }
-}
 
 class Docker::API
 {
-    has $.rest handles<query get post delete>;
+    has LibCurl::REST $.rest handles<query get post delete>;
+    has $!host;
+    has $!port;
+    has $!unix-socket-path;
+    has $!other-opts;
 
-    submethod BUILD(:$unix-socket-path = '/var/run/docker.sock', |opts)
+    submethod BUILD(Str :$!unix-socket-path, Str :$!host, Int :$!port,
+                    |other-opts)
     {
-        $!rest = LibCurl::REST.new(:$unix-socket-path, |opts)
+        $!unix-socket-path //= '/var/run/docker.sock' unless $!host;
+        $!host //= 'localhost';
+        $!port //= 80;
+        $!other-opts = other-opts;
+        $!rest = self!new-rest-handle;
+    }
+
+    method !new-rest-handle(--> LibCurl::REST)
+    {
+        LibCurl::REST.new(:$!host, :$!port, :$!unix-socket-path, |$!other-opts);
     }
 
     method auth(|creds)
@@ -116,21 +101,54 @@ class Docker::API
     }
 
     method container-logs(Str:D :$id!,
-                          Bool :$stdout,
-                          Bool :$stderr,
+                          Bool :$tty!,
+                          Bool :$follow = False,
+                          Bool :$merge = True,
+                          Bool :$stdout is copy,
+                          Bool :$stderr is copy,
                           Int :$since,
                           Int :$until,
                           Bool :$timestamps,
-                          Str :$tail)
+                          Str :$tail,
+                          Str :$enc = 'utf8',
+                          Bool :$translate-nl = True,
+                          Int :$timeout = 60*60*1000)
     {
-        my Bool $follow = False;  # no streaming yet!
+        if $merge { $stdout = $stderr = True }
 
-        Docker::Mux.new: buf =>
-            $.get(expand('containers/{id}/logs'
+        my $url = expand('containers/{id}/logs'
                          ~'{?follow,stdout,stderr,since,until,timestamps,tail}',
                          :$id, :$follow, :$stdout, :$stderr, :$since,
-                         :$until, :$timestamps, :$tail), :bin)
+                         :$until, :$timestamps, :$tail);
 
+        Docker::Stream.new(rest => self!new-rest-handle,
+                           :$url, :$merge, mux => !$tty, :$enc,
+                           :$translate-nl, :$timeout);
+    }
+
+    method container-attach(Str:D :$id!,
+                            Bool :$tty!,
+                            Str :$detachKeys,
+                            Bool :$logs,
+                            Bool :$stream,
+                            Bool :$stdin = True,
+                            Bool :$stdout = True,
+                            Bool :$stderr = True,
+                            Bool :$merge = False,
+                            Str  :$enc = 'utf8',
+                            Bool :$translate-nl = True,
+                            Int :$timeout = 60*60*1000)
+    {
+        die "attach is broken";
+
+        my $url = expand('containers/{id}/attach'
+                         ~'{?detachKeys,logs,stream,stdin,stdout,stderr}',
+                         :$id, :$detachKeys, :$stream,
+                         :$stdin, :$stdout, :$stderr);
+
+        Docker::Stream.new(rest => self!new-rest-handle, method => 'POST',
+                           :$url, :$merge, mux => !$tty, :$enc, :$translate-nl,
+                           :$timeout)
     }
 
     method container-start(Str:D :$id!, Str :$detachKeys)

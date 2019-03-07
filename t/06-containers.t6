@@ -31,7 +31,7 @@ is $cont<State><Running>, False, 'not running';
 is $cont<State><Status>, 'exited', 'exited';
 is $cont<State><ExitCode>, 0, 'exit code 0';
 
-ok my $log = $docker.container-logs(:$id, :stdout), 'get stdout';
+ok my $log = $docker.container-logs(:$id), 'get stdout';
 
 like $log, /'perl testing'/, 'log correct';
 

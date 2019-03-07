@@ -10,7 +10,8 @@
     "tags" : [ "Docker" ],
 
     "provides" : {
-        "Docker::API"  : "lib/Docker/API.pm6"
+        "Docker::API"    : "lib/Docker/API.pm6",
+        "Docker::Stream" : "lib/Docker/Stream.pm6"
     },
 
     "depends" : [ "LibCurl::Easy", "URI::Template", "JSON::Fast" ],

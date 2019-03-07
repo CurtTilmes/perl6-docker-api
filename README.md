@@ -55,9 +55,16 @@ bunch of other filter args
 
 no streaming yet
 
-### container-logs(Str:D :$id!, Bool :$stdout, Bool :$stderr, Int :$since, Int :$until, Bool :$timestamps, Str :$tail)
+### container-logs(Str:D :$id!, Bool :$merge = True, Bool :$stdout, Bool :$stderr, Int :$since, Int :$until, Bool :$timestamps, Str :$tail)
 
-no streaming yet
+Note, this sets `:merge` by default to true.
+
+`:merge` will automatically select *both* `:stdout` and `:stderr` and
+merge them into a single stream.  If you don't want that, pass in
+`:!merge` and `:stdout` and/or `:stderr`.
+
+If you pass in `:follow` it will leave the connection open and stream
+output to you.
 
 ### container-start(Str:D :$id!, Str :$detachKeys)
 

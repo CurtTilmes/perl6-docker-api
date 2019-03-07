@@ -5,7 +5,7 @@ use LibYAML:auth<github:CurtTilmes>;
 
 my $docker = Docker::API.new();
 
-print $docker.container-logs(id => 'bde083ce1d70', :stdout).stdout.decode;
+print $docker.container-logs(id => 'test');
 
 
 done-testing;
