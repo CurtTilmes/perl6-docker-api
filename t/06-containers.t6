@@ -4,7 +4,9 @@ use Docker::API;
 
 plan 18;
 
-isa-ok my $docker = Docker::API.new, Docker::API;
+my $docker = Docker::API.new;
+
+ok $docker.image-create(fromImage => 'alpine', tag => 'latest'), 'image pull';
 
 ok $docker.containers, 'containers';
 
@@ -31,7 +33,7 @@ is $cont<State><Running>, False, 'not running';
 is $cont<State><Status>, 'exited', 'exited';
 is $cont<State><ExitCode>, 0, 'exit code 0';
 
-ok my $log = $docker.container-logs(:$id), 'get stdout';
+ok my $log = $docker.container-logs(:$id, :!tty), 'get stdout';
 
 like $log, /'perl testing'/, 'log correct';
 
@@ -42,6 +44,5 @@ ok $cont = $docker.container-inspect(:$id), 'inspect again';
 is $cont<Name>, '/renamedperltesting', 'rename worked';
 
 ok $docker.container-remove(:$id), 'remove container';
-
 
 done-testing;

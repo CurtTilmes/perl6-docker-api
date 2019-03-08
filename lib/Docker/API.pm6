@@ -3,6 +3,12 @@ use LibCurl::REST;
 use URI::Template;
 use JSON::Fast;
 
+#
+# Docker allows filters to various commands to be specified in different
+# ways.  I always have a %filters argument so you can just pass in what
+# you want, and it tries to unpack other variables, Bool or Lists to
+# do the right thing in building it into a filter.
+#
 sub filters(%filters is copy = %(), *%vars)
 {
     for %vars.kv -> $k, $v
@@ -16,6 +22,10 @@ sub filters(%filters is copy = %(), *%vars)
     filters => (%filters ?? to-json(%filters, :!pretty) !! Nil)
 }
 
+#
+# cache URI::Templates, and process them with whatever variables get
+# passed in.  See URI::Template for more details
+#
 sub expand($template, |args)
 {
     state %template-cache;
@@ -402,6 +412,11 @@ class Docker::API
     method exec(Str:D :$id!, |desc)
     {
         $.exec-start(id => $.exec-create(:$id, |desc)<Id>)
+    }
+
+    method distribution(Str:D :$name!)
+    {
+        $.get(expand('distribution/{name}/json', :$name))
     }
 
     method plugins(:%filters, |filters)

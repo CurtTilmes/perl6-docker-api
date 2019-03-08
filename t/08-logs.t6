@@ -5,7 +5,13 @@ use LibYAML:auth<github:CurtTilmes>;
 
 my $docker = Docker::API.new();
 
-print $docker.container-logs(id => 'test');
+ok $docker.image-create(fromImage => 'alpine', tag => 'latest'), 'image pull';
 
+ok $docker.containers, 'containers';
+
+ok my $created = $docker.container-create(name => 'perltesting',
+                                          Image => 'alpine',
+                                          Cmd => ( 'echo', 'perl testing' )),
+    'create';
 
 done-testing;

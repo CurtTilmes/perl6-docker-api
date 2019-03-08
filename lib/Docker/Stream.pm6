@@ -152,9 +152,4 @@ class Docker::Stream
         await self.start;
         $str
     }
-
-    method gist()
-    {
-        self.Str
-    }
 }

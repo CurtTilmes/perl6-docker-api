@@ -21,6 +21,90 @@ API](https://docs.docker.com/engine/api/latest).
 
     say $docker.container-inspect(id => 'ec4e127cbebf);
 
+## Connection
+
+By default, Docker.new() will just use a unix socket on `/var/run/docker.sock`
+If you use a different socket name, you can pass in `:unix-socket-path`:
+
+    my $docker = Docker.new(unix-socket-path => '/my/special/socket')
+
+If you have it running on a TCP port (hopefully you know what you are
+doing and do it securely), you can pass in a host/port like this:
+
+    my $docker = Docker.new(host => 'somehost', port => 12345);
+
+If you know what you are doing, you can pass in other options for
+`LibCurl` and they just get passed through.
+
+One `LibCurl` option that is useful for debugging is `:verbose` which
+will dump out the HTTP headers.
+
+## filters
+
+Many of the command have a `:%filters` option.  You can construct your
+own hash of filter argument and just pass that in.  If you pass in
+other arguments, they will get stuck into filters.
+
+For example:
+
+    $docker.volumes(filters => { label => { foo => True } } );
+
+and
+
+    $docker.volumes(label => 'foo');
+
+do the same thing.
+
+## Streams
+
+Some commands (`stats`, `logs`) have options for streaming ongoing
+output.  They return a `Docker::Stream` object.  It is kind of, but
+not really like `Proc::Async`.
+
+It stringifies to just suck in all the output and return it as a
+string, so you can do things like this:
+
+    print $docker.logs(id => 'foo', :!tty);
+
+You can access `.stdout` and `.stderr` streams which are by default
+merged (and if you have a container with a `tty`, they are also merged
+so even if you ask for stderr, all output will be on stdout anyway).
+They are returned as supplies that must be tapped to use.
+
+You have to call `.start` to start the process.  It returns a
+`Promise` that will be kept when the process completes.
+
+```
+my $stream = $docker.logs(id => $foo, :!tty, :follow);
+$stream.stdout.tap({ .print });
+await self.start;
+```
+
+You can also use react/whenever:
+
+```
+my $stream = $docker.logs(id => $foo, :!tty, :follow);
+react {
+    whenever $stream.stdout.lines { .put }
+    whenever $stream.start { done }
+}
+```
+
+By default everything goes to stdout, by you can also separate
+out stderr and do something different:
+
+```
+my $stream = $docker.logs(id => $foo, :!tty, :!merge, :stdout, :stderr, :follow);
+react {
+    whenever $stream.stdout.lines { .put }
+    whenever $stream.stderr(:bin) {  # Binary Blobs instead of Strs
+        .decode.put
+    }
+    whenever $stream.start { done }
+}
+```
+
+
 ## Methods
 
 ### auth(...)
@@ -52,8 +136,6 @@ bunch of other filter args
 ### container-changes(Str:D :$id!)
 
 ### container-stats(Str:D :$id)
-
-no streaming yet
 
 ### container-logs(Str:D :$id!, Bool :$merge = True, Bool :$stdout, Bool :$stderr, Int :$since, Int :$until, Bool :$timestamps, Str :$tail)
 
@@ -251,6 +333,8 @@ lots of other options
 call `exec-create(:$id, ...)`, then `exec-start()`
 
 ### plugins(%filters, ...)
+
+### distribution(Str:D :$name!)
 
 ## Connection Information
 
