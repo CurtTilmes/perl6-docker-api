@@ -2,6 +2,8 @@ use Test;
 use Test::When <author>;
 use Docker::API;
 
+plan 10;
+
 my $docker = Docker::API.new;
 
 ok $docker.image-create(fromImage => 'alpine', tag => 'latest'), 'image pull';
@@ -21,9 +23,15 @@ ok my $exec = $docker.exec-create(:$id, :AttachStdout,
 
 my $exec-id = $exec<Id>;
 
-my $output = ~$docker.exec-start(id => $exec-id);
+ok my $output = ~$docker.exec-start(id => $exec-id), 'exec start';
 
 is $output, "exec testing\n", 'Got output';
+
+ok $output = ~$docker.exec(:$id, :AttachStdout,
+                           Cmd => ( '/bin/echo', 'more exec testing')),
+    'exec';
+
+is $output, "more exec testing\n", 'Got output';
 
 ok $docker.container-stop(:$id), 'stop container';
 
