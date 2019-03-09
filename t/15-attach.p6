@@ -5,13 +5,14 @@ use LibCurl::EasyHandle;
 
 my $docker = Docker::API.new;
 
+plan 1;
+ok 1;
 
+#my $stream = $docker.container-logs(id => 'test', :tty, :follow);
 
-my $stream = $docker.container-logs(id => 'test', :tty, :follow);
+#$stream.stdout(:bin).tap({ .decode.print });
 
-$stream.stdout(:bin).tap({ .decode.print });
-
-await $stream.start;
+#await $stream.start;
 
 #react
 #{
@@ -25,3 +26,6 @@ await $stream.start;
 #await $stream.start;
 
 #say "done";
+
+done-testing;
+

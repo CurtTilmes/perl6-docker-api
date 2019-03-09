@@ -111,11 +111,11 @@ class Docker::API
     }
 
     method container-logs(Str:D :$id!,
-                          Bool :$tty!,
+                          Bool :$tty,
                           Bool :$follow = False,
                           Bool :$merge = True,
-                          Bool :$stdout is copy,
-                          Bool :$stderr is copy,
+                          Bool :$stdout = True,
+                          Bool :$stderr = True,
                           Int :$since,
                           Int :$until,
                           Bool :$timestamps,
@@ -124,8 +124,6 @@ class Docker::API
                           Bool :$translate-nl = True,
                           Int :$timeout = 60*60*1000)
     {
-        if $merge { $stdout = $stderr = True }
-
         my $url = expand('containers/{id}/logs'
                          ~'{?follow,stdout,stderr,since,until,timestamps,tail}',
                          :$id, :$follow, :$stdout, :$stderr, :$since,
@@ -137,7 +135,7 @@ class Docker::API
     }
 
     method container-attach(Str:D :$id!,
-                            Bool :$tty!,
+                            Bool :$tty,
                             Str :$detachKeys,
                             Bool :$logs,
                             Bool :$stream,
@@ -394,9 +392,21 @@ class Docker::API
         $.post(expand('containers/{id}/exec', :$id), desc.hash)
     }
 
-    method exec-start(Str:D :$id!, |desc)
+    method exec-start(Str:D :$id!, Bool :$Detach, Bool :$Tty,
+                      Bool :$merge = True,
+                      Str  :$enc = 'utf8',
+                      Bool :$translate-nl = True,
+                      Int :$timeout = 60*60*1000)
     {
-        $.post(expand('exec/{id}/start', :$id), desc.hash)
+        my $rest = $!rest;  # Must create/start exec on same connection?
+        $!rest = self!new-rest-handle;
+
+        my $url = expand('exec/{id}/start', :$id);
+
+        Docker::Stream.new(:$rest, method => 'POST', :$url, mux => !$Tty,
+                           Content-Type => 'application/json',
+                           body => to-json({ :$Detach, :$Tty }),
+                           :$merge, :$enc, :$translate-nl, :$timeout)
     }
 
     method exec-resize(Str:D :$id!, Int :$h, Int :$w)
@@ -422,5 +432,15 @@ class Docker::API
     method plugins(:%filters, |filters)
     {
         $.get(expand('plugins{?filters}', |filters(%filters, |filters)))
+    }
+
+    method events(Str :$since, Str :$until, :$timeout = 60*60*1000,
+                  :%filters, |filters)
+    {
+        my $url = expand('events{?since,until,filters}', :$since, :$until,
+                         |filters(%filters, |filters));
+
+        Docker::Stream.new(rest => self!new-rest-handle,
+                           :$url, :$timeout);
     }
 }

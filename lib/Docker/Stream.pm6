@@ -1,4 +1,5 @@
 use NativeCall;
+use JSON::Fast;
 
 sub strstr(Pointer, Str --> Pointer) is native {}
 
@@ -6,6 +7,8 @@ class Docker::Stream
 {
     has $.rest is required;
     has $.url is required;
+    has $.body;
+    has $.Content-Type;
     has Bool $.merge = True;
     has Bool $.mux;
     has $.method = 'GET';
@@ -121,27 +124,52 @@ class Docker::Stream
 
         $!rest.curl.setopt(URL => $!rest.prefix, :connect-only).perform;
 
-        $!rest.curl.handle.send("$!method /$!url HTTP/1.1\r\n" ~
-                                "Host: localhost\r\n" ~
-                                "Accept: */*\r\n\r\n");
+        my $request = "$!method /$!url HTTP/1.1\r\n" ~
+                      "Host: localhost\r\n" ~
+                      "Accept: */*\r\n";
+        $request ~= "Content-Type: $_\r\n" with $!Content-Type;
+        $request ~= "Content-Length: {.encode.bytes}\r\n" with $!body;
+        $request ~= "\r\n";
+        $request ~= $_ with $!body;
+        $!rest.curl.handle.send($request);
+
+#        say $request;
 
         my $buf = $!rest.curl.handle.recv;
+
+#        say $buf.decode;
+
         my $ptr = nativecast(Pointer, $buf);
         my $eol = strstr($ptr, "\r\n");
         my $statusline = $buf.subbuf(^($eol - $ptr)).decode;
 #        say $statusline;
         die "Bad Status: $statusline" unless $statusline eq 'HTTP/1.1 200 OK';
         my $eoh = strstr(Pointer.new($eol+2), "\r\n\r\n");
-#        my $headers = $buf.subbuf(($eol + 2 - $ptr) ..^ ($eoh - $ptr)).decode;
+        my $headers = $buf.subbuf(($eol + 2 - $ptr) ..^ ($eoh - $ptr)).decode;
 #        say $headers;
+
+        my $chunked = $headers ~~ /'Transfer-Encoding: chunked'/; # Yeah, yeah..
+
         $buf = $buf.subbuf($eoh+4-$ptr);
+
         start
         {
-            loop
+            repeat
             {
-                last unless self!dechunk($buf);
+                if $chunked
+                {
+                    last unless self!dechunk($buf);
+                }
+                elsif $!mux
+                {
+                    self!demux($buf)
+                }
+                else
+                {
+                    .emit($buf) with $!stdout-supply
+                }
                 $buf = $!rest.curl.handle.recv(:$!timeout);
-            }
+            } while $buf && $buf.elems
         }
     }
 

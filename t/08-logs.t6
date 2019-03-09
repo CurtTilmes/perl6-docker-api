@@ -9,9 +9,44 @@ ok $docker.image-create(fromImage => 'alpine', tag => 'latest'), 'image pull';
 
 ok $docker.containers, 'containers';
 
+my $Cmd = ('/bin/sh', '-c', '(echo this goes to stdout) && (echo this goes to stderr > /dev/stderr)');
+
 ok my $created = $docker.container-create(name => 'perltesting',
                                           Image => 'alpine',
-                                          Cmd => ( 'echo', 'perl testing' )),
-    'create';
+                                          :$Cmd), 'create';
+
+my $id = $created<Id>;
+
+ok $docker.container-start(:$id), 'start container';
+
+sleep .2;
+
+ok my $logs = ~$docker.container-logs(:$id), 'merged logs';
+
+like $logs, /'this goes to stdout'/, 'got stdout';
+like $logs, /'this goes to stderr'/, 'got stderr';
+
+ok $logs = ~$docker.container-logs(:$id, :!stderr), 'get just stdout';
+
+like $logs, /'this goes to stdout'/, 'got stdout';
+unlike $logs, /'this goes to stderr'/, 'no stderr';
+
+ok $logs = ~$docker.container-logs(:$id, :!stdout), 'get just stderr';
+
+unlike $logs, /'this goes to stdout'/, 'got stdout';
+like $logs, /'this goes to stderr'/, 'no stderr';
+
+ok my $stream = $docker.container-logs(:$id, :!merge), 'not merged';
+
+my $stdout = '';
+$stream.stdout.tap({$stdout ~= $_ });
+my $stderr = '';
+$stream.stderr.tap({$stderr ~= $_ });
+await $stream.start;
+
+is $stdout, "this goes to stdout\n", 'stdout right';
+is $stderr, "this goes to stderr\n", 'stderr right';
+
+ok $docker.container-remove(:$id), 'remove';
 
 done-testing;

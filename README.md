@@ -57,14 +57,17 @@ do the same thing.
 
 ## Streams
 
-Some commands (`stats`, `logs`) have options for streaming ongoing
-output.  They return a `Docker::Stream` object.  It is kind of, but
-not really like `Proc::Async`.
+Some commands (`stats`, `logs`, `events`, `exec`) have options for
+streaming ongoing output.  They return a `Docker::Stream` object.  It
+is kind of, but not really like `Proc::Async`.
 
-It stringifies to just suck in all the output and return it as a
+It stringifies to just slurp in all the output and return it as a
 string, so you can do things like this:
 
-    print $docker.logs(id => 'foo', :!tty);
+    print $docker.logs(id => 'foo');
+
+If you do that with something that keeps on streaming, it will keep on
+slurping forever and appear to hang.
 
 You can access `.stdout` and `.stderr` streams which are by default
 merged (and if you have a container with a `tty`, they are also merged
@@ -83,7 +86,7 @@ await self.start;
 You can also use react/whenever:
 
 ```
-my $stream = $docker.logs(id => $foo, :!tty, :follow);
+my $stream = $docker.logs(id => $foo, :follow);
 react {
     whenever $stream.stdout.lines { .put }
     whenever $stream.start { done }
@@ -94,7 +97,7 @@ By default everything goes to stdout, by you can also separate
 out stderr and do something different:
 
 ```
-my $stream = $docker.logs(id => $foo, :!tty, :!merge, :stdout, :stderr, :follow);
+my $stream = $docker.logs(id => $foo, :!merge, :stdout, :stderr, :follow);
 react {
     whenever $stream.stdout.lines { .put }
     whenever $stream.stderr(:bin) {  # Binary Blobs instead of Strs
@@ -103,7 +106,6 @@ react {
     whenever $stream.start { done }
 }
 ```
-
 
 ## Methods
 
@@ -114,11 +116,11 @@ react {
                  email => 'me@example.com',
                  serveraddress => 'https://index.docker.io/v1/');
 
-### version
+### version()
 
-### info
+### info()
 
-### df
+### df()
 
 ### containers(Bool :$all, Int :$limit, Bool :$size, :%filters, |args)
 
@@ -335,16 +337,6 @@ call `exec-create(:$id, ...)`, then `exec-start()`
 ### plugins(%filters, ...)
 
 ### distribution(Str:D :$name!)
-
-## Connection Information
-
-The Docker REST API uses a unix domain socket (`/var/run/docker.sock`
-by default) If you use a different socket, pass it in with the
-`socket` option.
-
-    use Docker;
-
-    my $docker = Docker.new(socket => '/my/special/place/docker.sock');
 
 ## INSTALL
 
