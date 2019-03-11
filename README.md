@@ -1,25 +1,36 @@
 # Docker - Perl 6 Docker API
 
 A simple wrapper around the [Docker REST
-API](https://docs.docker.com/engine/api/latest).
+API](https://docs.docker.com/engine/api/latest).  Much of the API is
+not fully documented here -- it just follows the API.
 
 ## Basic Usage
 
     use Docker;
 
-    my $docker = Docker.new;
+    my $d = Docker.new;      # Defaults to /var/run/docker.sock
 
-    say $docker.version<Version>;     # Lots of other stuff in version
+    $d.version<Version>;     # Other stuff in version too
 
-    say $docker.info<ProductLicense>; # Lots of other stuff in info
+    $d.info<ProductLicense>; # Other stuff in info too
 
-    say $docker.df;
+    $d.images;               # List Images
 
-    say $docker.images;
+    $d.containers;           # List Containers
 
-    say $docker.containers;
+    $d.image-create(fromImage => 'alpine', tag => 'latest'); # image pull
 
-    say $docker.container-inspect(id => 'ec4e127cbebf);
+    $d.container-create(name => 'foo',
+                        Image => 'alpine',
+                        Cmd => ( '/bin/echo', 'hello world!') );
+
+    $d.container-start(id => 'foo');
+
+    print $d.container-logs(id => 'foo');
+
+    $d.container-stop(id => 'foo');
+
+    $d.container-remove(id => 'foo');
 
 ## Connection
 
