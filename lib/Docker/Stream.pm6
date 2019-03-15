@@ -119,7 +119,7 @@ class Docker::Stream
 
     method write(Blob:D $buf)
     {
-        start $!rest.curl.handle.send($buf, :$!timeout)
+        $!rest.curl.handle.send($buf, :$!timeout)
     }
 
     method print(Str() $str)

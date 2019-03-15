@@ -2,6 +2,7 @@ use Docker::Stream;
 use LibCurl::REST;
 use URI::Template;
 use JSON::Fast;
+use Base64;
 
 #
 # Docker allows filters to various commands to be specified in different
@@ -43,28 +44,34 @@ class Docker::API
     has $!host;
     has $!port;
     has $!unix-socket-path;
-    has $!auth;
+    has $.auth-token is rw;
     has $!other-opts;
 
     submethod BUILD(Str :$!unix-socket-path, Str :$!host, Int :$!port,
-                    Str :$!auth, |other-opts)
+                    Str :$!auth-token, |other-opts)
     {
         $!unix-socket-path //= '/var/run/docker.sock' unless $!host;
         $!host //= 'localhost';
         $!port //= 80;
         $!other-opts = other-opts;
+        $!auth-token //= %*ENV<DOCKER_API_AUTH_TOKEN>;
         $!rest = self!new-rest-handle;
     }
 
     method !new-rest-handle(--> LibCurl::REST)
     {
-        my $rest = LibCurl::REST.new(:$!host, :$!port, :$!unix-socket-path,
-                                     |$!other-opts);
+        LibCurl::REST.new(:$!host, :$!port, :$!unix-socket-path,
+                          |$!other-opts)
+    }
 
-        $rest.curl.set-header('X-Registry-Auth' => to-json(
-                                  { identitytoken => $_ })) with $!auth;
+    method token(|creds)
+    {
+        encode-base64(:str, to-json(creds.hash, :!pretty))
+    }
 
-        $rest
+    method !registry-auth-header()
+    {
+        $!auth-token ?? headers => { X-Registry-Auth => $!auth-token } !! ()
     }
 
     method ping()
@@ -244,7 +251,8 @@ class Docker::API
     {
         $.post(expand('images/create' ~
                       '{?fromImage,fromSrc,repo,tag,platform}',
-                      :$fromImage, :$fromSrc, :$repo, :$tag, :$platform))
+                      :$fromImage, :$fromSrc, :$repo, :$tag, :$platform),
+               |self!registry-auth-header)
     }
 
     method image-build(Str :$dockerfile, :@t, Str :$extrahosts,
@@ -292,7 +300,8 @@ class Docker::API
 
     method image-push(Str:D :$name!, Str :$tag)
     {
-        $.post(expand('images/{name}/push{?tag}', :$name, :$tag))
+        $.post(expand('images/{name}/push{?tag}', :$name, :$tag),
+               |self!registry-auth-header)
     }
 
     method image-remove(Str:D :$name!, Bool :$force, Bool :$noprune)

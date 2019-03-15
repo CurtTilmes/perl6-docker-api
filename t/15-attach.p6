@@ -27,8 +27,7 @@ ok $stream.stdout.tap({ $stdout ~= $_ }), 'tap stdout';
 
 isa-ok my $p = $stream.start, Promise, 'start process';
 
-lives-ok { await($stream.put('echo hello world')
-                 .then({ $stream.put('exit') })) },
+lives-ok { $stream.print("echo hello world\nexit\n") },
     'send command';
 
 lives-ok { await($p) }, 'wait for container finish';

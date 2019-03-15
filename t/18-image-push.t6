@@ -1,0 +1,24 @@
+use Test;
+use Test::When <author>;
+use Docker::API;
+
+plan 3;
+
+exit skip-rest('No DOCKER_API_AUTH_TOKEN') unless %*ENV<DOCKER_API_AUTH_TOKEN>;
+
+my $docker = Docker::API.new;
+
+ok $docker.image-create(fromImage => 'quay.io/ctilmes/testing',
+                        tag => 'latest'),
+    'image pull';
+
+ok $docker.image-tag(name => 'quay.io/ctilmes/testing:latest',
+                     repo => 'quay.io/ctilmes/testing',
+                     tag => '1.0'),
+    'image tag';
+
+ok $docker.image-push(name => 'quay.io/ctilmes/testing', tag => '1.0'),
+    'image push';
+
+done-testing;
+

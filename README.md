@@ -118,12 +118,45 @@ react {
 }
 ```
 
+## Authentication
+
+Using `image-create` to pull an image from a private repository or
+using `image-push` will require authentication to the image registry.
+
+You will need an authenication token, which is an insecure way of
+encoding authentication credentials.  (Protect the token from
+disclosure like a password.)
+
+You can use the `token` method to create a token:
+
+    my $auth-token = Docker::API.token(
+        username => 'me',
+        password => '********',
+        serveraddress => 'https://index.docker.io/v1/');
+
+You can also just create one manually from the command line:
+
+    echo -n '{"username":"me","password":"*******","serveraddress":"quay.io"}' | base64 -w0
+
+Pass that in to the `:auth-token` parameter to `Docker.new`:
+
+    my $docker = Docker::API.new(:$auth-token);
+
+You can also set it later if you need multiple tokens (or just make
+multiple `Docker::API` objects.)
+
+    $docker.auth-token = '...';
+
+It will also use a token from environment variable
+`DOCKER_API_AUTH_TOKEN` if that is set.  That is much preferred to
+embedding the password in a script.
+
 ## Methods
 
 ### auth(...)
 
     $docker.auth(username => 'me',
-                 password => %*ENV<DOCKERHUB_PW>,
+                 password => '********',
                  email => 'me@example.com',
                  serveraddress => 'https://index.docker.io/v1/');
 
