@@ -168,7 +168,7 @@ class Docker::Stream
         my $headers = $buf.subbuf(($eol + 2 - $ptr) ..^ ($eoh - $ptr)).decode;
 #        say $headers;
 
-        my $chunked = $headers ~~ /'Transfer-Encoding: chunked'/; # Yeah, yeah..
+        my $chunked = $headers ~~ /^^'Transfer-Encoding: chunked'$$/;
 
         $buf = $buf.subbuf($eoh+4-$ptr);
 
