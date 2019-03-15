@@ -1,31 +1,42 @@
 use Test;
 use Test::When <author>;
 use Docker::API;
-use LibCurl::EasyHandle;
+use LibYAML:auth<github:CurtTilmes>;
 
 my $docker = Docker::API.new;
 
-plan 1;
-ok 1;
+plan 10;
 
-#my $stream = $docker.container-logs(id => 'test', :tty, :follow);
+ok $docker.image-create(fromImage => 'busybox', tag => 'latest'),
+    'image pull';
 
-#$stream.stdout(:bin).tap({ .decode.print });
+ok $docker.container-create(name => 'perltesting',
+                            Image => 'busybox',
+                            :AttachStdin, :OpenStdin, :AttachStdout),
+    'create container';
 
-#await $stream.start;
+ok $docker.container-start(id => 'perltesting'),
+    'start container';
 
-#react
-#{
-#    whenever $stream.stdout.lines { say 'line: ', $_ }
-#    whenever $stream.stderr { print "ERROR:", $_ }
-#    whenever $stream.start  { say "complete"; done }
-#}
+isa-ok my $stream = $docker.container-attach(id => 'perltesting'),
+    Docker::Stream, 'attach to container';
 
-#$stream.stdout.tap({ print 'line : ', $_ });
+my $stdout = '';
 
-#await $stream.start;
+ok $stream.stdout.tap({ $stdout ~= $_ }), 'tap stdout';
 
-#say "done";
+isa-ok my $p = $stream.start, Promise, 'start process';
+
+lives-ok { await($stream.put('echo hello world')
+                 .then({ $stream.put('exit') })) },
+    'send command';
+
+lives-ok { await($p) }, 'wait for container finish';
+
+is $stdout, "hello world\n", 'correct output';
+
+ok $docker.container-remove(id => 'perltesting'),
+    'remove container';
 
 done-testing;
 

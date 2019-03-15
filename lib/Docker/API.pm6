@@ -43,10 +43,11 @@ class Docker::API
     has $!host;
     has $!port;
     has $!unix-socket-path;
+    has $!auth;
     has $!other-opts;
 
     submethod BUILD(Str :$!unix-socket-path, Str :$!host, Int :$!port,
-                    |other-opts)
+                    Str :$!auth, |other-opts)
     {
         $!unix-socket-path //= '/var/run/docker.sock' unless $!host;
         $!host //= 'localhost';
@@ -57,7 +58,18 @@ class Docker::API
 
     method !new-rest-handle(--> LibCurl::REST)
     {
-        LibCurl::REST.new(:$!host, :$!port, :$!unix-socket-path, |$!other-opts);
+        my $rest = LibCurl::REST.new(:$!host, :$!port, :$!unix-socket-path,
+                                     |$!other-opts);
+
+        $rest.curl.set-header('X-Registry-Auth' => to-json(
+                                  { identitytoken => $_ })) with $!auth;
+
+        $rest
+    }
+
+    method ping()
+    {
+        $.get('_ping') eq 'OK'
     }
 
     method auth(|creds)
@@ -138,20 +150,18 @@ class Docker::API
                             Bool :$tty,
                             Str :$detachKeys,
                             Bool :$logs,
-                            Bool :$stream,
+                            Bool :$stream = True,
                             Bool :$stdin = True,
                             Bool :$stdout = True,
                             Bool :$stderr = True,
-                            Bool :$merge = False,
+                            Bool :$merge,
                             Str  :$enc = 'utf8',
                             Bool :$translate-nl = True,
                             Int :$timeout = 60*60*1000)
     {
-        die "attach is broken";
-
         my $url = expand('containers/{id}/attach'
                          ~'{?detachKeys,logs,stream,stdin,stdout,stderr}',
-                         :$id, :$detachKeys, :$stream,
+                         :$id, :$detachKeys, :$logs, :$stream,
                          :$stdin, :$stdout, :$stderr);
 
         Docker::Stream.new(rest => self!new-rest-handle, method => 'POST',

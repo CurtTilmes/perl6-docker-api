@@ -117,6 +117,26 @@ class Docker::Stream
              !! self!wrap-decoder($!stderr-supply.Supply, :$enc, :$translate-nl)
     }
 
+    method write(Blob:D $buf)
+    {
+        start $!rest.curl.handle.send($buf, :$!timeout)
+    }
+
+    method print(Str() $str)
+    {
+        self.write($!encoder.encode-chars($str))
+    }
+
+    method put(\x, |c)
+    {
+        self.print(x.join ~ "\n", |c)
+    }
+
+    method say(\x, |c)
+    {
+        self.print(x.gist ~ "\n", |c)
+    }
+
     method start()
     {
         die "Already started" if $!started;
