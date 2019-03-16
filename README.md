@@ -223,7 +223,21 @@ is not supported on Windows.
 
 ### container-changes(Str:D :$id!)
 
+Get changes on a container’s filesystem
 
+Returns which files in a container's filesystem have been added,
+deleted, or modified. The Kind of modification can be one of:
+
+0: Modified
+1: Added
+2: Deleted
+
+### container-export(Str:D :$id!, Str :$download)
+
+Export the contents of a container as a tarball.
+
+Specify a filename in `:download` to save to disk, otherwise
+returns tar file as a `Buf`.
 
 ### container-stats(Str:D :$id)
 

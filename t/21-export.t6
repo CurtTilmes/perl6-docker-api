@@ -1,0 +1,22 @@
+use Test;
+use Test::When <author>;
+use Docker::API;
+
+plan 4;
+
+my $docker = Docker::API.new;
+
+ok $docker.image-create(fromImage => 'hello-world', tag => 'latest'),
+    'image pull';
+
+ok my $created = $docker.container-create(name => 'perltesting',
+                                          Image => 'hello-world:latest'),
+    'create container';
+
+my $id = $created<Id>;
+
+isa-ok $docker.container-export(:$id), 'Buf', 'export container';
+
+ok $docker.container-remove(:$id), 'remove container';
+
+done-testing;

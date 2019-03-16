@@ -122,6 +122,12 @@ class Docker::API
         $.get(expand('containers/{id}/changes', :$id))
     }
 
+    method container-export(Str:D :$id!, :$download)
+    {
+        $.get(expand('containers/{id}/export', :$id),
+              :bin, :$download)
+    }
+
     method container-stats(Str:D :$id!)
     {
         my Bool $stream = False; # no stream yet
