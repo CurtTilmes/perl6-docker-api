@@ -13,7 +13,7 @@ plan 1;
 #    X::AdHoc,
 #    message => /'unauthorized: incorrect username or password'/;
 
-exit skip-rest('No DOCKERPW') unless %*ENV<DOCKERPW>;
+skip-rest('No DOCKERPW') && exit 0 unless %*ENV<DOCKERPW>;
 
 is $docker.auth(username => 'ctilmes',
                 password => %*ENV<DOCKERPW>,

@@ -4,7 +4,8 @@ use Docker::API;
 
 plan 3;
 
-exit skip-rest('No DOCKER_API_AUTH_TOKEN') unless %*ENV<DOCKER_API_AUTH_TOKEN>;
+skip-rest('No DOCKER_API_AUTH_TOKEN') && exit 0
+    unless %*ENV<DOCKER_API_AUTH_TOKEN>;
 
 my $docker = Docker::API.new;
 

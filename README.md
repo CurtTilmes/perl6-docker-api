@@ -68,9 +68,10 @@ do the same thing.
 
 ## Streams
 
-Some commands (`stats`, `logs`, `events`, `exec`) have options for
-streaming ongoing output.  They return a `Docker::Stream` object.  It
-is kind of, but not really like `Proc::Async`.
+Some commands such as `attach`, `stats`, `logs`, `events`, `exec`,
+etc. have options for streaming ongoing output.  They return a
+`Docker::Stream` object.  It is kind of, but not really like
+`Proc::Async`.
 
 It stringifies to just slurp in all the output and return it as a
 string, so you can do things like this:
@@ -89,7 +90,7 @@ You have to call `.start` to start the process.  It returns a
 `Promise` that will be kept when the process completes.
 
 ```
-my $stream = $docker.logs(id => $foo, :!tty, :follow);
+my $stream = $docker.logs(id => $foo, :follow);
 $stream.stdout.tap({ .print });
 await self.start;
 ```
@@ -117,6 +118,35 @@ react {
     whenever $stream.start { done }
 }
 ```
+
+You can send input to the container (if you use the right options to
+attach/open stdin):
+
+```
+$docker.container-create(name => 'foo',
+                         Image => 'busybox',
+                         :AttachStdin, :OpenStdin, :AttachStdout),
+
+$docker.container-start(id => foo);
+
+my $stream = $docker.container-attach(id => foo);
+
+my $stdout = '';
+
+$stream.stdout.tap({ $stdout ~= $_ });  # Capture stdout in a string
+
+my $p = $stream.start; # start the stream up
+
+$stream.print("echo hello world\nexit\n");  # Send two lines to stdin
+
+await($p);  # Wait for the stream to close
+
+print $stdout;   # Dump the string or do something else with it.
+```
+
+(Of course for something this simple, you are probably better off with
+`exec`, but you can really drive interactive stuff with this if you
+know what you are doing.)
 
 ## Authentication
 
@@ -160,32 +190,52 @@ embedding the password in a script.
                  email => 'me@example.com',
                  serveraddress => 'https://index.docker.io/v1/');
 
+Validate credentials for a registry and, if available, get an identity
+token for accessing the registry without password.
+
 ### version()
+
+Returns the version of Docker that is running and various information
+about the system that Docker is running on.
 
 ### info()
 
+Get system information.
+
 ### df()
 
-### containers(Bool :$all, Int :$limit, Bool :$size, :%filters, |args)
+Get data usage information.
 
-`:$all`
-`:$limit`
-`:$size`
-`:%filters`
+### containers(Bool :$all, Int :$limit, Bool :$size, :%filters, |filters)
 
-bunch of other filter args
+Returns a list of containers.
 
-### container-inspect(Str:D :$id!)
+### container-inspect(Str:D :$id!, Bool :$size)
 
-### container-top(Str:D :$id!)
+Return low-level information about a container.
+
+### container-top(Str:D :$id!, Str :$ps_args)
+
+List processes running inside a container.
+
+On Unix systems, this is done by running the ps command. This endpoint
+is not supported on Windows.
 
 ### container-changes(Str:D :$id!)
+
+
 
 ### container-stats(Str:D :$id)
 
 ### container-logs(Str:D :$id!, Bool :$merge = True, Bool :$stdout, Bool :$stderr, Int :$since, Int :$until, Bool :$timestamps, Str :$tail)
 
-Note, this sets `:merge` by default to true.
+Get stdout and stderr logs from a container.
+
+Note: This endpoint works only for containers with the json-file or
+journald logging driver.
+
+Note, this sets `:merge`, an additional option specific to this
+module, by default to true.
 
 `:merge` will automatically select *both* `:stdout` and `:stderr` and
 merge them into a single stream.  If you don't want that, pass in

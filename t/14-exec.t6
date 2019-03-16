@@ -10,7 +10,7 @@ ok $docker.image-create(fromImage => 'alpine', tag => 'latest'), 'image pull';
 
 ok my $created = $docker.container-create(name => 'perltesting',
                                           Image => 'alpine',
-                                          Cmd => ( '/bin/sleep', '1')),
+                                          Cmd => ( '/bin/sleep', '10')),
                                           'create container';
 
 my $id = $created<Id>;
@@ -33,7 +33,7 @@ ok $output = ~$docker.exec(:$id, :AttachStdout,
 
 is $output, "more exec testing\n", 'Got output';
 
-ok $docker.container-stop(:$id), 'stop container';
+ok $docker.container-stop(:$id, :0t), 'stop container';
 
 ok $docker.container-remove(:$id), 'remove';
 

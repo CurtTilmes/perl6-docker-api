@@ -119,7 +119,7 @@ class Docker::API
 
     method container-changes(Str:D :$id!)
     {
-        $.get("containers/$id/changes")
+        $.get(expand('containers/{id}/changes', :$id))
     }
 
     method container-stats(Str:D :$id!)
@@ -417,10 +417,13 @@ class Docker::API
                       Bool :$translate-nl = True,
                       Int :$timeout = 60*60*1000)
     {
-        my $rest = $!rest;  # Must create/start exec on same connection?
-        $!rest = self!new-rest-handle;
 
         my $url = expand('exec/{id}/start', :$id);
+
+        return $.post($url, { :$Detach, :$Tty }) if $Detach;
+
+        my $rest = $!rest;  # Must create/start exec on same connection?
+        $!rest = self!new-rest-handle;
 
         Docker::Stream.new(:$rest, method => 'POST', :$url, mux => !$Tty,
                            Content-Type => 'application/json',
@@ -438,9 +441,10 @@ class Docker::API
         $.get(expand('exec/{id}/json', :$id))
     }
 
-    method exec(Str:D :$id!, |desc)
+    method exec(Str:D :$id!, Bool :$Detach, Bool :$Tty, |desc)
     {
-        $.exec-start(id => $.exec-create(:$id, |desc)<Id>)
+        $.exec-start(:$Detach, :$Tty,
+                     id => $.exec-create(:$id, :$Tty, |desc)<Id>)
     }
 
     method distribution(Str:D :$name!)
