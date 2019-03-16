@@ -18,7 +18,8 @@ class Docker::Stream
     has $!encoder;
     has $!stdout-supply;
     has $!stderr-supply;
-    has Bool $.started = False;
+    has Bool $.started;
+    has Bool $.json;
 
     submethod TWEAK(--> Nil)
     {
@@ -90,12 +91,14 @@ class Docker::Stream
             {
                 $decoder.add-bytes($buf);
                 my $available = $decoder.consume-available-chars();
+                $available = from-json($available) if $!json;
                 emit $available if $available ne '';
                 LAST
                 {
                     with $decoder
                     {
                         my $rest = .consume-all-chars();
+                        $rest = from-json($rest) if $!json;
                         emit $rest if $rest ne '';
                     }
                 }

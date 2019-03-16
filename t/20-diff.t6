@@ -21,7 +21,7 @@ ok $docker.exec(:$id, :Detach,
                 Cmd => ( '/bin/touch', '/newfile' )),
     'make a new file';
 
-is-deeply $docker.container-changes(:$id),
+is-deeply $docker.container-diff(:$id),
     [ { Kind => 1, Path => '/newfile' }, ],
     'Added a file';
 
@@ -29,7 +29,7 @@ ok $docker.exec(:$id, :Detach,
                 Cmd => ( '/bin/rm', '/etc/issue' )),
     'Remove a file';
 
-is-deeply $docker.container-changes(:$id).sort,
+is-deeply $docker.container-diff(:$id).sort,
     [ { Kind => 1, Path => '/newfile' },
       { Kind => 0, Path => '/etc' },
       { Kind => 2, Path => '/etc/issue' } ].sort,

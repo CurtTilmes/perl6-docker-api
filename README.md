@@ -221,9 +221,12 @@ List processes running inside a container.
 On Unix systems, this is done by running the ps command. This endpoint
 is not supported on Windows.
 
-### container-changes(Str:D :$id!)
+### container-diff(Str:D :$id!)
 
 Get changes on a container’s filesystem
+
+(This is called 'changes' in the API, but 'diff' in the docker command
+line app.)
 
 Returns which files in a container's filesystem have been added,
 deleted, or modified. The Kind of modification can be one of:
@@ -239,7 +242,20 @@ Export the contents of a container as a tarball.
 Specify a filename in `:download` to save to disk, otherwise
 returns tar file as a `Buf`.
 
-### container-stats(Str:D :$id)
+### container-stats(Str:D :$id, Bool :$stream = False)
+
+Get container stats based on resource usage
+This endpoint returns a live stream of a container’s resource usage statistics.
+
+Differently from the docker API, `:stream` is NOT the default.
+
+If you want a stream, pass in `:stream`, otherwise you just get a snapshot.
+
+Process a stream the normal way, through `stdout`:
+
+    my $stream = $docker.container-stats(:$id, :stream);
+    $stream.stdout.tap({ .say });
+    $stream.start;
 
 ### container-logs(Str:D :$id!, Bool :$merge = True, Bool :$stdout, Bool :$stderr, Int :$since, Int :$until, Bool :$timestamps, Str :$tail)
 
@@ -260,32 +276,111 @@ output to you.
 
 ### container-start(Str:D :$id!, Str :$detachKeys)
 
+Start a container
+
+`:detachKeys` - Override the key sequence for detaching a
+container. Format is a single character [a-Z] or ctrl-<value> where
+<value> is one of: a-z, @, ^, [, , or _.
+
 ### container-stop(Str:D :$id!, Int :$t)
+
+Stop a container
 
 `:t` = Number of seconds to wait before killing the container
 
 ### container-restart(Str:D :$id!, Int :$t)
 
+Restart a container
+
 `:t` = Number of seconds to wait before restarting the container
 
 ### container-kill(Str:D :$id!, Cool :$signal)
+
+Kill a container
+
+Send a POSIX signal to a container, defaulting to killing to the container.
 
 :signal can be a POSIX signal integer or string (e.g. `SIGINT`)
 default `SIGKILL`
 
 ### container-rename(Str:D :$id!, Str:D :$name!)
 
+Rename a container
+
 ### container-pause(Str:D :$id!)
+
+Pause a container
+
+Use the cgroups freezer to suspend all processes in a container.
+
+Traditionally, when suspending a process the SIGSTOP signal is used,
+which is observable by the process being suspended. With the cgroups
+freezer the process is unaware, and unable to capture, that it is
+being suspended, and subsequently resumed.
 
 ### container-unpause(Str:D :$id!)
 
+Unpause a container
+
+Resume a container which has been paused.
+
+### container-attach(Str:D :$id!, Bool :$tty, Str :$detachKeys, Bool :$logs, Bool :$stream = True, Bool :$stdin = True, Bool :$stdout = True, Bool :$stderr = True, Bool :$merge = True, Str :$enc = 'utf8', Bool :$translate-nl = True, Int :$timeout = 60*60*1000)
+
+Attach to a container
+
+Attach to a container to read its output or send it input. You can
+attach to the same container multiple times and you can reattach to
+containers that have been detached.
+
+Either the stream or logs parameter must be true for this endpoint to
+do anything.
+
 ### container-wait(Str:D :$id!, Str :$condition)
+
+Wait for a container
+
+Block until a container stops, then returns the exit code.
 
 `:condition` = `not-running` (default), `next-exit`, `removed`
 
 ### container-remove(Str:D :$id!, Bool :$v, Bool :$force, Bool :$link)
 
-### containers-prune(:%filters)
+Remove a container
+
+`:v` - Remove the volumes associated with the container.
+
+`:force` - If the container is running, kill it before removing it.
+
+`:link` - Remove the specified link associated with the container.
+
+### container-archive-info(Str :$id!, Str :$path!)
+
+Get information about files in a container
+
+### container-archive(Str :$id!, Str:D :$path!, Str :$download)
+
+Get a tar archive of a resource in the filesystem of container id.
+
+Specify a filename in `:download` to save to disk, otherwise
+returns tar file as a `Buf`.
+
+You can extract files from the tar file (even in a memory Buf) using
+the ecosystem module `Archive::Libarchive`.
+
+### container-copy(Str:D :$id!, Str:D :$path!, Bool :$noOverwriteDirNonDir
+                   Str :$upload, Buf :$send)
+
+Extract an archive of files or folders to a directory in a container
+
+Upload a tar archive to be extracted to a path in the filesystem of
+container id.
+
+You specify either the filename of a tar file with `:upload`, or use
+`:send` to upload directly from a memory `Buf`.
+
+### containers-prune(:%filters, |filters)
+
+Delete stopped containers
 
 ### container-create(Str :$name, *%fields)
 
@@ -296,6 +391,11 @@ default `SIGKILL`
      put $container<Id>;
 
 ### container-update(Str:D :$id!, *%fields)
+
+Update a container
+
+Change various configuration options of a container without having to
+recreate it.
 
 ### images(:%filters, Bool :$all, Bool :$digests)
 
@@ -430,9 +530,11 @@ lots of other options
 
 ### exec-start(Str:D :$id!, ...)
 
-`:id` of exec
 
 ### exec-resize(Str:D :$id!, Int :$h, Int :$w)
+
+Resize the TTY for a container. You must restart the container for the
+resize to take effect.
 
 ### exec-inspect(Str:D :$id!)
 

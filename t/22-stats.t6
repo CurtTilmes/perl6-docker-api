@@ -1,0 +1,39 @@
+use Test;
+use Test::When <author>;
+use Docker::API;
+
+plan 9;
+
+my $docker = Docker::API.new;
+
+ok $docker.image-create(fromImage => 'busybox', tag => 'latest'),
+    'image pull';
+
+my @Cmd = ( '/bin/sh', '-c', 'while true; do $(echo date); sleep 1; done' );
+
+ok my $created = $docker.container-create(name => 'perltesting',
+                                          Image => 'busybox',
+                                          :@Cmd),
+    'create container';
+
+my $id = $created<Id>;
+
+ok $docker.container-start(:$id), 'start container';
+
+isa-ok $docker.container-stats(:$id), Hash, 'get single stats';
+
+ok my $stream = $docker.container-stats(:$id, :stream), 'get stats stream';
+
+my @stats;
+
+ok $stream.stdout.tap({ @stats.push($_) }), 'tap stdout';
+
+isa-ok $stream.start, Promise, 'start streaming';
+
+sleep 2;
+
+isa-ok @stats[0], Hash, 'Got some stats';
+
+ok $docker.container-remove(:$id, :force), 'remove container';
+
+done-testing;

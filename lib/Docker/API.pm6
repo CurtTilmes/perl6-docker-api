@@ -40,7 +40,7 @@ sub expand($template, |args)
 
 class Docker::API
 {
-    has LibCurl::REST $.rest handles<query get post delete>;
+    has LibCurl::REST $.rest handles<query get post delete head put>;
     has $!host;
     has $!port;
     has $!unix-socket-path;
@@ -117,22 +117,23 @@ class Docker::API
         $.get(expand('containers/{id}/top{?ps_args}'), $id, :$ps_args)
     }
 
-    method container-changes(Str:D :$id!)
+    method container-diff(Str:D :$id!)
     {
         $.get(expand('containers/{id}/changes', :$id))
     }
 
-    method container-export(Str:D :$id!, :$download)
+    method container-export(Str:D :$id!, |opts)
     {
-        $.get(expand('containers/{id}/export', :$id),
-              :bin, :$download)
+        $.get(expand('containers/{id}/export', :$id), :bin, |opts)
     }
 
-    method container-stats(Str:D :$id!)
+    method container-stats(Str:D :$id!, Bool :$stream = False)
     {
-        my Bool $stream = False; # no stream yet
-
-        $.get(expand('containers/{id}/stats{?stream}', :$id, :$stream))
+        my $url = expand('containers/{id}/stats{?stream}', :$id, :$stream);
+        $stream
+            ?? Docker::Stream.new(rest => self!new-rest-handle, :$url,
+                                  :json, :!mux)
+            !! $.get($url)
     }
 
     method container-logs(Str:D :$id!,
@@ -154,9 +155,8 @@ class Docker::API
                          :$id, :$follow, :$stdout, :$stderr, :$since,
                          :$until, :$timestamps, :$tail);
 
-        Docker::Stream.new(rest => self!new-rest-handle,
-                           :$url, :$merge, mux => !$tty, :$enc,
-                           :$translate-nl, :$timeout);
+        Docker::Stream.new(rest => self!new-rest-handle, :$url, :$merge,
+                           mux => !$tty, :$enc,:$translate-nl, :$timeout);
     }
 
     method container-attach(Str:D :$id!,
@@ -167,7 +167,7 @@ class Docker::API
                             Bool :$stdin = True,
                             Bool :$stdout = True,
                             Bool :$stderr = True,
-                            Bool :$merge,
+                            Bool :$merge = True,
                             Str  :$enc = 'utf8',
                             Bool :$translate-nl = True,
                             Int :$timeout = 60*60*1000)
@@ -233,6 +233,27 @@ class Docker::API
     {
         $.delete(expand('containers/{id}{?v,force,link}',
                         :$id, :$v, :$force, :$link))
+    }
+
+    method container-archive-info(Str:D :$id!, Str :$path!)
+    {
+        my $headers = $.head(expand('containers/{id}/archive{?path}',
+                                    :$id, :$path));
+        from-json(decode-base64($headers<X-Docker-Container-Path-Stat>,
+                                :bin).decode)
+    }
+
+    method container-archive(Str:D :$id!, Str :$path!, |opts)
+    {
+        $.get(expand('containers/{id}/archive{?path}', :$id, :$path),
+              :bin, |opts)
+    }
+
+    method container-copy(Str:D :$id!, Str:D :$path!,
+                          Bool :$noOverwriteDirNonDir, |opts)
+    {
+        $.put(expand('containers/{id}/archive{?path,noOverwriteDirNonDir}',
+                     :$id, :$path, :$noOverwriteDirNonDir), |opts)
     }
 
     method containers-prune(:%filters, |filters)
@@ -322,19 +343,19 @@ class Docker::API
                       |filters(%filters, |filters)))
     }
 
-    method image-get(Str:D :$name!, Str :$download)
+    method image-get(Str:D :$name!, |opts)
     {
-        $.get(expand('images/{name}/get', :$name), :$download, :bin)
+        $.get(expand('images/{name}/get', :$name), :bin, |opts)
     }
 
-    method images-get(:@names!, Str :$download)
+    method images-get(:@names!, |opts)
     {
-        $.get(expand('images/get{?names}', :@names), :$download, :bin)
+        $.get(expand('images/get{?names}', :@names), :bin, |opts)
     }
 
-    method images-load(Bool :$quiet, Str :$upload)
+    method images-load(Bool :$quiet, |opts)
     {
-        $.post(expand('images/load{?quiet}', :$quiet), :$upload)
+        $.post(expand('images/load{?quiet}', :$quiet), |opts)
     }
 
     method volumes(:%filters, |filters)
