@@ -1,13 +1,14 @@
 use Test;
 use Test::When <author>;
 use Docker::API;
-use LibYAML:auth<github:CurtTilmes>;
 
-#plan 4;
+plan 7;
 
 isa-ok my $docker = Docker::API.new, Docker::API;
 
-ok my $list = $docker.images(:all), 'all images';
+isa-ok $docker.images(:all), Array, 'all images';
+
+isa-ok $docker.images(reference => 'busybox'), Array, 'list images';
 
 ok $docker.images-search(term => 'alpine', limit => 10,
                          :is-official, :!is-automated), 'search';

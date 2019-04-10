@@ -399,9 +399,11 @@ recreate it.
 
 ### images(:%filters, Bool :$all, Bool :$digests)
 
-    my $list = $docker.images(filters =>
-                                %( reference =>
-                                    %( 'alpine*:*' => True )));
+Returns a list of images on the server. Note that it uses a different,
+smaller representation of an image than inspecting a single image.
+
+    my $list = $docker.images(reference => { 'alpine' });
+
     .<RepoTags>.say for @$list;
 
 ### image-create(Str :$fromImage, Str :$fromStr, Str :$repo, Str :$tag,

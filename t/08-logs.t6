@@ -7,7 +7,7 @@ my $docker = Docker::API.new();
 
 ok $docker.image-create(fromImage => 'alpine', tag => 'latest'), 'image pull';
 
-ok $docker.containers, 'containers';
+isa-ok $docker.containers, Array, 'containers';
 
 my $Cmd = ('/bin/sh', '-c', '(echo this goes to stdout) && (echo this goes to stderr > /dev/stderr)');
 

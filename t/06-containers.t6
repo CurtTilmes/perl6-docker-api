@@ -8,7 +8,7 @@ my $docker = Docker::API.new;
 
 ok $docker.image-create(fromImage => 'alpine', tag => 'latest'), 'image pull';
 
-ok $docker.containers, 'containers';
+isa-ok $docker.containers, Array, 'containers';
 
 ok my $created = $docker.container-create(name => 'perltesting',
                                           Image => 'alpine',
