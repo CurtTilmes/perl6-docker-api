@@ -11,10 +11,11 @@
 
     "provides" : {
         "Docker::API"    : "lib/Docker/API.pm6",
-        "Docker::Stream" : "lib/Docker/Stream.pm6"
+        "Docker::Stream" : "lib/Docker/Stream.pm6",
+        "Docker::Container" : "lib/Docker/Container.pm6"
     },
 
-    "depends" : [ "LibCurl::Easy", "URI::Template", "JSON::Fast" ],
+    "depends" : [ "LibCurl::Easy", "URI::Template", "JSON::Fast", "Base64" ],
 
     "description" : "Docker API for Perl 6",
 

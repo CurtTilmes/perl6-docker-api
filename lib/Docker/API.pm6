@@ -1,8 +1,9 @@
-use Docker::Stream;
 use LibCurl::REST;
 use URI::Template;
 use JSON::Fast;
 use Base64;
+use Docker::Stream;
+use Docker::Container;
 
 #
 # Docker allows filters to various commands to be specified in different
@@ -36,7 +37,6 @@ sub expand($template, |args)
 
     $uri.process(|args)
 }
-
 
 class Docker::API
 {
@@ -265,6 +265,11 @@ class Docker::API
     method container-create(Str :$name, *%fields)
     {
         $.post(expand('containers/create{?name}', :$name), %fields)
+    }
+
+    method container(|opts)
+    {
+        Docker::Container.new(api => self, |opts)
     }
 
     method images(Bool :$all, Bool :$digests, :%filters, |filters)

@@ -1,0 +1,10 @@
+Interact with the docker API directly with curl or other HTTP tools.
+
+For the JSON results, use jq to format
+
+curl --unix-socket /var/run/docker.sock -H "Content-Type: application/json" http://localhost/version | jq
+
+Rather than mocking all of docker, the tests require a functioning
+docker system.  If you have docker running on /var/run/docker.sock,
+set ALL_TESTING to 1 to run the tests, otherwise most tests are
+skipped.

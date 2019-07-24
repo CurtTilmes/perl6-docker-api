@@ -8,12 +8,14 @@ isa-ok my $docker = Docker::API.new, Docker::API;
 
 ok my $info = $docker.info, 'Request Docker system information';
 
-ok $info<ServerVersion>, 'ServerVersion';
-
-ok $info<KernelVersion>, 'KernelVersion';
+say $info;
 
 ok $info<OSType>, 'OSType';
 
 ok $info<ProductLicense>, 'ProductLicense';
+
+ok $info<NCPU>, "NCPU";
+
+ok $info<MemTotal>, "MemTotal";
 
 done-testing;
