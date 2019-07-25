@@ -12,7 +12,7 @@ not fully documented here -- it just follows the API.
 
     $d.version<Version>;     # Other stuff in version too
 
-    $d.info<ProductLicense>; # Other stuff in info too
+    $d.info<OSType>;         # Other stuff in info too
 
     $d.images;               # List Images
 
@@ -464,7 +464,7 @@ Returns Blob of a tar file
 You can pass in a filename in `:download` and it will dump the tar
 file into that file.
 
-### images-get(:@names, Str :$download))
+### images-get(:@names)
 
 Returns Blob of a tar file
 

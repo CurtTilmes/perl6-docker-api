@@ -19,7 +19,7 @@
 
     "description" : "Docker API for Perl 6",
 
-    "test-depends" : [ "Test", "Test::When", "Test::META" ],
+    "test-depends" : [ "Test", "Test::When", "Test::META", "Libarchive" ],
 
     "license" : "NASA-1.3",
 
