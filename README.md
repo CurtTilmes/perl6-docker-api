@@ -367,8 +367,7 @@ returns tar file as a `Buf`.
 You can extract files from the tar file (even in a memory Buf) using
 the ecosystem module `Archive::Libarchive`.
 
-### container-copy(Str:D :$id!, Str:D :$path!, Bool :$noOverwriteDirNonDir,
-Str :$upload, Buf :$send)
+### container-copy(Str:D :$id!, Str:D :$path!, Bool :$noOverwriteDirNonDir, Str :$upload, Buf :$send)
 
 Extract an archive of files or folders to a directory in a container
 
