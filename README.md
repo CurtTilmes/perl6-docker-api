@@ -324,7 +324,7 @@ Unpause a container
 
 Resume a container which has been paused.
 
-### container-attach(Str:D :$id!, Bool :$tty, Str :$detachKeys, Bool :$logs, Bool :$stream = True, Bool :$stdin = True, Bool :$stdout = True, Bool :$stderr = True, Bool :$merge = True, Str :$enc = 'utf8', Bool :$translate-nl = True, Int :$timeout = 60*60*1000)
+### container-attach(Str:D :$id!, Bool :$tty, Str :$detachKeys, Bool :$logs, Bool :$stream = True, Bool :$stdin = True, Bool :$stdout = True, Bool :$stderr = True, Bool :$merge = True, Str :$enc = 'utf8', Bool :$translate-nl = True, Int :$timeout = 3600000)
 
 Attach to a container
 
