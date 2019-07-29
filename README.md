@@ -472,8 +472,18 @@ You can pass in a filename in `:download` and it will dump the tar
 file into that file.
 
 ### images-load(Bool :$quiet, Str :$upload)
+### images-load(Blob $blob, Bool :$quiet)
 
 Upload a tar file with images.
+
+You can specify a filename to upload with `:upload`:
+
+    $docker.images-load(upload => 'foo.tar');
+
+or just pass in a `Blob`:
+
+    $docker.images-load($tarblob);
+
 
 ### volumes(:%filters, :$name, :$label)
 
