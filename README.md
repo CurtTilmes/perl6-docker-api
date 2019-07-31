@@ -2,7 +2,9 @@
 
 A simple wrapper around the [Docker REST
 API](https://docs.docker.com/engine/api/latest).  Much of the API is
-not fully documented here -- it just follows the API.
+not fully documented here -- it just follows the API.  It is recommended
+that you be familiar with Docker in general and the API specifically
+before using this module to automate your Docker tasks.
 
 ## Basic Usage
 
