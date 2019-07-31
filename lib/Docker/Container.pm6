@@ -1,3 +1,5 @@
+use Docker::API;
+
 class Docker::Container
 {
     has $.api;
