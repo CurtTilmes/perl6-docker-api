@@ -38,7 +38,8 @@ There is a `Docker::Container` class that remembers the container `id` for you.
 
     use Docker::Container;
     
-    my $container = Docker::Container.new(Image => 'alpine', Cmd => ( '/bin/echo', 'hello world!'));
+    my $container = Docker::Container.new(Image => 'alpine',
+                                          Cmd => ( '/bin/echo', 'hello world!'));
     $container.start;
     print $container.logs;
     $container.stop;
