@@ -6,9 +6,9 @@ not fully documented here -- it just follows the API.
 
 ## Basic Usage
 
-    use Docker;
+    use Docker::API;
 
-    my $d = Docker.new;      # Defaults to /var/run/docker.sock
+    my $d = Docker::API.new;      # Defaults to /var/run/docker.sock
 
     $d.version<Version>;     # Other stuff in version too
 
@@ -32,17 +32,29 @@ not fully documented here -- it just follows the API.
 
     $d.container-remove(id => 'foo');
 
+## Convenience class
+
+There is a `Docker::Container` class that remembers the container `id` for you.
+
+    use Docker::Container;
+    
+    my $container = Docker::Container.new(Image => 'alpine', Cmd => ( '/bin/echo', 'hello world!'));
+    $container.start;
+    print $container.logs;
+    $container.stop;
+    $container.remove;
+
 ## Connection
 
-By default, Docker.new() will just use a unix socket on `/var/run/docker.sock`
+By default, Docker::API.new() will just use a unix socket on `/var/run/docker.sock`
 If you use a different socket name, you can pass in `:unix-socket-path`:
 
-    my $docker = Docker.new(unix-socket-path => '/my/special/socket')
+    my $docker = Docker::API.new(unix-socket-path => '/my/special/socket')
 
 If you have it running on a TCP port (hopefully you know what you are
 doing and do it securely), you can pass in a host/port like this:
 
-    my $docker = Docker.new(host => 'somehost', port => 12345);
+    my $docker = Docker::API.new(host => 'somehost', port => 12345);
 
 If you know what you are doing, you can pass in other options for
 `LibCurl` and they just get passed through.
