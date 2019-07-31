@@ -105,7 +105,7 @@ react {
 }
 ```
 
-By default everything goes to stdout, by you can also separate
+By default everything goes to stdout, but you can also separate
 out stderr and do something different:
 
 ```
@@ -365,7 +365,7 @@ Specify a filename in `:download` to save to disk, otherwise
 returns tar file as a `Buf`.
 
 You can extract files from the tar file (even in a memory Buf) using
-the ecosystem module `Archive::Libarchive`.
+the ecosystem module `Libarchive`.
 
 ### container-copy(Str:D :$id!, Str:D :$path!, Bool :$noOverwriteDirNonDir, Str :$upload, Buf :$send)
 
@@ -405,19 +405,11 @@ smaller representation of an image than inspecting a single image.
 
     .<RepoTags>.say for @$list;
 
-### image-create(Str :$fromImage, Str :$fromStr, Str :$repo, Str :$tag,
-                Str :$platform)
+### image-create(Str :$fromImage, Str :$fromStr, Str :$repo, Str :$tag, Str :$platform)
 
     $docker.image-create(fromImage => 'alpine', tag => 'latest');
 
-### image-build(Str :$dockerfile, :@t, Str :$extrahosts,
-                       Str :$remote, Bool :$q, Bool :$nocache,
-                       :@cachefrom, Str :$pull, Bool :$rm, Bool :$forcerm,
-                       Int :$memory, Int :$memswap, Int :$cpushares,
-                       Str :$cpusetcpus, Int :$cpuperiod, Int :$cpuquota,
-                       :%buildargs, Int :$shmsize, Bool :$squash, :%labels,
-                       Str :$networkmode, Str :$platform, Str :$target)
-
+### image-build(Str :$dockerfile, :@t, Str :$extrahosts, Str :$remote, Bool :$q, Bool :$nocache, :@cachefrom, Str :$pull, Bool :$rm, Bool :$forcerm, Int :$memory, Int :$memswap, Int :$cpushares, Str :$cpusetcpus, Int :$cpuperiod, Int :$cpuquota, :%buildargs, Int :$shmsize, Bool :$squash, :%labels, Str :$networkmode, Str :$platform, Str :$target)
 
     $docker.image-build(:q, :rm, t => ['docker-perl-testing:test-version'],
         remote => 'https://github.com/CurtTilmes/docker-test.git')
@@ -433,13 +425,29 @@ which file is the Dockerfile.
 
 ### image-inspect(Str:D :$name!)
 
+Return low-level information about an image.
+
 ### image-history(Str:D :$name!)
+
+Return parent layers of an image.
 
 ### image-tag(Str:D :$name!, Str :$repo, Str :$tag)
 
+Tag an image so that it becomes part of a repository.
+
 ### image-push(Str:D :$name!, Str :$tag)
 
+Push an image to a registry.
+
+If you wish to push an image on to a private registry, that image must already have a tag which references the registry. For example, registry.example.com/myimage:latest.
+
+The push is cancelled if the HTTP connection is closed.
+
 ### image-remove(Str:D :$name!, Bool :$force, Bool :$noprune)
+
+Remove an image, along with any untagged parent images that were referenced by that image.
+
+Images can't be removed if they have descendant images, are being used by a running container or are being used by a build.
 
 ### images-search(Str:D :$term, Int :$limit, :%filters,
                  Bool :$is-official, Bool :$is-automated, Int :$stars)
@@ -482,7 +490,6 @@ You can specify a filename to upload with `:upload`:
 or just pass in a `Blob`:
 
     $docker.images-load($tarblob);
-
 
 ### volumes(:%filters, :$name, :$label)
 
@@ -540,7 +547,6 @@ lots of other options
 `:id` of container
 
 ### exec-start(Str:D :$id!, ...)
-
 
 ### exec-resize(Str:D :$id!, Int :$h, Int :$w)
 
