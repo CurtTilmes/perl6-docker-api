@@ -495,7 +495,16 @@ class Docker::API
         my $url = expand('events{?since,until,filters}', :$since, :$until,
                          |filters(%filters, |filters));
 
-        Docker::Stream.new(rest => self!new-rest-handle,
-                           :$url, :$timeout);
+        my $event-stream = Docker::Stream.new(rest => self!new-rest-handle,
+                                              :$url, :$timeout);
+
+        $event-stream.start;
+        supply
+        {
+            whenever $event-stream.stdout
+            {
+                emit from-json $_
+            }
+        }
     }
 }

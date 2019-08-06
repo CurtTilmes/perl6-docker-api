@@ -576,6 +576,26 @@ resize to take effect.
 
 call `exec-create(:$id, ...)`, then `exec-start()`
 
+### events(Str :$since, Str :$until, :$timeout, :%filters)
+
+Stream real-time events from the server.
+
+Various objects within Docker report events when something happens to them.
+
+Returns a Supply of Events:
+
+    my $events = $docker.events();
+    $events.tap({ .say }
+
+The events come as hashes, so you can break out the fields Action,
+Actor, id, time, etc. and react to specific actions:
+
+    react {
+        whenever $events -> % (:$Action, :$id, :$time, *%) {
+            ...
+        }
+    }
+
 ### plugins(%filters, ...)
 
 ### distribution(Str:D :$name!)

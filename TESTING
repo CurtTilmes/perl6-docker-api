@@ -8,3 +8,7 @@ Rather than mocking all of docker, the tests require a functioning
 docker system.  If you have docker running on /var/run/docker.sock,
 set ALL_TESTING to 1 to run the tests, otherwise most tests are
 skipped.
+
+Some tests may get incorrect results if run in parallel or while other
+Docker activities are occuring, Some may leave behind images or other
+artifacts (though I'm trying to clean up after successful tests).

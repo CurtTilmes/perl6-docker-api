@@ -1,10 +1,8 @@
 use Test;
 use Test::When <author>;
 use Docker::API;
-use LibYAML:auth<github:CurtTilmes>;
-use JSON::Fast;
 
-#plan 4;
+plan 6;
 
 isa-ok my $docker = Docker::API.new, Docker::API;
 
