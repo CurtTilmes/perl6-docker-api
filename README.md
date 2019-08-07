@@ -39,7 +39,7 @@ before using this module to automate your Docker tasks.
 There is a `Docker::Container` class that remembers the container `id` for you.
 
     use Docker::Container;
-    
+
     my $container = Docker::Container.new(Image => 'alpine',
                                           Cmd => ( '/bin/echo', 'hello world!'));
     $container.start;
@@ -49,8 +49,9 @@ There is a `Docker::Container` class that remembers the container `id` for you.
 
 ## Connection
 
-By default, Docker::API.new() will just use a unix socket on `/var/run/docker.sock`
-If you use a different socket name, you can pass in `:unix-socket-path`:
+By default, Docker::API.new() will just use a unix socket on
+`/var/run/docker.sock` If you use a different socket name, you can
+pass in `:unix-socket-path`:
 
     my $docker = Docker::API.new(unix-socket-path => '/my/special/socket')
 
@@ -437,6 +438,23 @@ smaller representation of an image than inspecting a single image.
 is a Dockerfile, or a single file that is a tarball with a Dockerfile
 in it.  If you rename the dockerfile, pass in `:dockerfile` to tell it
 which file is the Dockerfile.
+
+You can also bundle the `Dockerfile` and other optional files into a
+tar file:
+
+    use Libarchive::Simple;
+
+    with archive-write(my $tarfile = Buf.new, format => 'paxr')
+    {
+        .write('Dockerfile', q:to/DOCKERFILE/);
+            FROM alpine:latest
+            LABEL maintainer="Curt Tilmes <Curt.Tilmes@nasa.gov>"
+            ENTRYPOINT ["/bin/ash"]
+            DOCKERFILE
+        .close;
+    }
+
+    $docker.image-build($tarfile, t => ['myimage:myversion']);
 
 ### image-inspect(Str:D :$name!)
 

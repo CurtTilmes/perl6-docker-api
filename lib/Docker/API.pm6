@@ -293,13 +293,13 @@ class Docker::API
                        Int :$memory, Int :$memswap, Int :$cpushares,
                        Str :$cpusetcpus, Int :$cpuperiod, Int :$cpuquota,
                        :%buildargs, Int :$shmsize, Bool :$squash, :%labels,
-                       Str :$networkmode, Str :$platform, Str :$target)
+                       Str :$networkmode, Str :$platform, Str :$target, |opts)
     {
         my $cachefrom = to-json(@cachefrom) if @cachefrom;
         my $buildargs = to-json(%buildargs) if %buildargs;
         my $labels    = to-json(%labels)    if %labels;
 
-        $.post(expand('build{?dockerfile,t*,extrahosts,remote,q,nocache,cachefrom,pull,rm,forcerm,memory,memswap,cpushares,cpusetcpus,cpuperiod,cpuquota,buildargs,shmsize,squash,labels,networkmode,platform,target}', :$dockerfile, :@t, :$extrahosts, :$remote, :$q, :$nocache, :$cachefrom, :$pull, :$rm, :$forcerm, :$memory, :$memswap, :$cpushares, :$cpusetcpus, :$cpuperiod, :$cpuquota, :$buildargs, :$shmsize, :$squash, :$labels, :$networkmode, :$platform, :$target))
+        $.post(expand('build{?dockerfile,t*,extrahosts,remote,q,nocache,cachefrom,pull,rm,forcerm,memory,memswap,cpushares,cpusetcpus,cpuperiod,cpuquota,buildargs,shmsize,squash,labels,networkmode,platform,target}', :$dockerfile, :@t, :$extrahosts, :$remote, :$q, :$nocache, :$cachefrom, :$pull, :$rm, :$forcerm, :$memory, :$memswap, :$cpushares, :$cpusetcpus, :$cpuperiod, :$cpuquota, :$buildargs, :$shmsize, :$squash, :$labels, :$networkmode, :$platform, :$target), |opts)
     }
 
     method build-prune(Int :$keep-storage, Bool :$all, :%filters, |filters)
