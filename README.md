@@ -482,8 +482,7 @@ Remove an image, along with any untagged parent images that were referenced by t
 
 Images can't be removed if they have descendant images, are being used by a running container or are being used by a build.
 
-### images-search(Str:D :$term, Int :$limit, :%filters,
-                 Bool :$is-official, Bool :$is-automated, Int :$stars)
+### images-search(Str:D :$term, Int :$limit, :%filters, Bool :$is-official, Bool :$is-automated, Int :$stars)
 
     my $list = $docker.images-search(term => 'alpine',
                                      limit => 10,
